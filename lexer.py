@@ -1,4 +1,4 @@
-# Lexer for defininf all Tokens
+# Lexer for defining all Tokens
 
 import ply.lex as lex
 import sys
