@@ -45,7 +45,7 @@ def p_main_B(p):
 # Declaration
 def p_declaration(p):
   '''
-  declaration : type declaration_A
+  declaration : type_val declaration_A
   '''
 def p_declaration_A(p):
   '''
@@ -73,7 +73,7 @@ def p_function(p):
   '''
 def function_A(p): # Parameters for functions
   '''
-  function_A : type ID function_A1
+  function_A : type_val ID function_A1
   '''
 def function_A1(p):
   '''
@@ -82,7 +82,7 @@ def function_A1(p):
   '''
 def function_B(p): # Type of return value (includes void)
   '''
-  function_B : type
+  function_B : type_val
              | VOID
   '''
 def function_C(p): # Statements inside function
@@ -104,13 +104,14 @@ def function_call_A(p): # Parameters for function call
   '''
   function_call_A : hyper_exp 
                   | hyper_exp COMMA function_call_A
+                  | empty
   '''
 # Statement
 def statement(p):
   '''
   statement : declaration
             | block
-            | declaration_obj
+            | declaration_class
   '''
 # Block
 def block(p):
@@ -122,7 +123,7 @@ def block(p):
         | function_call
         | lecture
         | writing
-        | obj_action
+        | class_action
         | list_action
   '''
 # Assign
@@ -134,7 +135,7 @@ def assign_A(p):
   '''
   assign_A : hyper_exp
            | function_call
-           | obj_values
+           | class_values
            | list_values
   '''
 # Hyper Exp
@@ -195,6 +196,149 @@ def exp_A1(p):
   '''
   exp_A1 : PLUS
          | MINUS
+  '''
+# Term
+def term(p):
+  '''
+  term : factor term_A
+  '''
+def term_A(p):
+  '''
+  term_A : term_A1 term
+         | empty
+  '''
+def term_A1(p):
+  '''
+  term_A1 : MULTIPLY
+          | DIVIDE
+  '''
+# Factor
+def factor(p):
+  '''
+  factor : value
+         | OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
+  '''
+# Cycle call
+def cycle(p):
+  '''
+  cycle : cycle_A END
+  '''
+def cycle_A(p):
+  '''
+  cycle_A : loop
+          | until
+  '''
+def loop(p): # Loop Cycle structure
+  '''
+  loop : LOOP FROM ID TO loop_A BY patron built_block
+  '''
+def loop_value(p):
+  '''
+  loop_value : ID
+             | INT_CONST
+             | list_val
+             | class_values
+  '''
+def patron(p):
+  '''
+  patron : patron_A loop_value
+  '''
+def patron_A(p):
+  '''
+  patron_A : PLUS
+           | MINUS
+           | MULTIPLY
+           | DIVIDE
+  '''
+def until(p):
+  '''
+  until : UNTIL hyper_exp IS bool_values DO cycle_B
+  '''
+# Condition
+def condition(p):
+  '''
+  condition : IF condition_exp built_block condition_A condition_B END
+  '''
+def condition_exp(p):
+  '''
+  condition_exp : OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
+  '''
+def condition_A(p):
+  '''
+  condition_A : ELSIF condition_exp built_block condition_A
+              | empty
+  '''
+def condition_B(p):
+  '''
+  condition_B : ELSE built_block
+  '''
+# Lecture
+def lecture(p):
+  '''
+  lecture : IN OPEN_PARENTHESIS lecture_A CLOSE_PARENTHESIS
+  '''
+def lecture_A(p):
+  '''
+  lecture_A : ID lecture_A1
+  '''
+def lecture_A1(p):
+  '''
+  lecture_A1 : COMMA lecture_A
+             | empty
+  '''
+# Writing
+def writing(p):
+  '''
+  writing : OUT OPEN_PARENTHESIS writing_A CLOSE_PARENTHESIS
+  '''
+def writing_A(p):
+  '''
+  writing_A : hyper_exp writing_A1
+  '''
+def writing_A1(p):
+  '''
+  writing_A1 : COMMA writing_A
+             | empty
+  '''
+############################### General Real Value Grammars
+# Block for Condition and Cycles
+def built_block(p):
+  '''
+  built_block : block built_block
+              | empty
+  '''
+# Type Val
+def type_val(p):
+  '''
+  type_val : INT
+           | FLO
+           | BOO
+           | CHA
+           | STR
+  '''
+# Value
+def value(p):
+  '''
+  value : ID
+        | constants
+        | list_values
+        | class_values
+        | function_call
+  '''
+# Constants
+def constants(p):
+  '''
+  constants : INT_CONST
+            | CHAR_CONST
+            | FLOAT_CONST
+            | STRING_CONST
+            | bool_values
+  '''
+# Bool Values
+def bool_values(p):
+  '''
+  bool_values : TRUE
+              | FALSE
   '''
 # Empty
 def p_empty(p):
