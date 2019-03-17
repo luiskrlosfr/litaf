@@ -51,6 +51,7 @@ reserved = {
   'void'       : 'VOID',
   'true'       : 'TRUE',
   'false'      : 'FALSE',
+  'main'       : 'MAIN',
   'with'       : 'WITH',
   'end'        : 'END',
   'in'         : 'IN',
