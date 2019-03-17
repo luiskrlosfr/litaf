@@ -24,7 +24,7 @@ def p_program_A1(p):
   program_A1 : declaration
             | assign_simple
             | function
-            | class
+            | class_
             | empty
   '''
 # Main
@@ -300,6 +300,59 @@ def writing_A1(p):
   writing_A1 : COMMA writing_A
              | empty
   '''
+############################### Class Related Grammar
+# Class
+def class_(p):
+  '''
+  class : CLASS_ID heritance IS class_attributes class_methods END
+  '''
+def heritance(p):
+  '''
+  heritance : FROM CLASS_ID
+            | empty
+  '''
+# Attributes
+def class_attributes(p):
+  '''
+  class_attributes : ATTRIBUTES DOUBLE_DOT attributes END
+  '''
+def attributes(p):
+  '''
+  attributes : attributes_A attributes
+             | empty
+  '''
+def attributes_A(p):
+  '''
+  attributes_A : visibility type_val ID
+  '''
+# Methods
+def class_methods(p):
+  '''
+  class_methods : METHODS DOUBLE_DOT methods END
+  '''
+def methods(p):
+  '''
+  methods : constructor constructor methods_A
+  '''
+def methods_A(p):
+  '''
+  methods_A : visibility function methods_A
+            | empty
+  '''
+def constructor(p):
+  '''
+  constructor : visibility CLASS_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
+  '''
+def constructor_A(p):
+  '''
+  constructor_A : statement constructor_A
+                | empty
+  '''
+def visibility(p):
+  '''
+  visibility : PUBLIC
+             | PRIVATE
+  '''
 ############################### General Real Value Grammars
 # Block for Condition and Cycles
 def built_block(p):
@@ -346,3 +399,10 @@ def p_empty(p):
   empty : 
   '''
   p[0] = ""
+
+# Simple Error
+def p_error(p):
+  print("Error en la gramática")
+
+# Build the parser
+parser = yacc.yacc()
