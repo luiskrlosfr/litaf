@@ -71,7 +71,7 @@ def p_function(p):
   '''
   function : FUN FUNCTION_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS function_B function_C function_D END
   '''
-def function_A(p): # Parameters for functions
+def function_A(p): # Parameters for declaring functions
   '''
   function_A : type_val ID function_A1
   '''
@@ -102,9 +102,13 @@ def function_call(p):
   '''
 def function_call_A(p): # Parameters for function call
   '''
-  function_call_A : hyper_exp 
-                  | hyper_exp COMMA function_call_A
+  function_call_A : hyper_exp function_call_A1
                   | empty
+  '''
+def function_call_A1(p):
+  '''
+  function_call_A1 : COMMA hyper_exp function_call_A1
+                   | empty
   '''
 # Statement
 def statement(p):
@@ -123,8 +127,8 @@ def block(p):
         | function_call
         | lecture
         | writing
-        | class_action
-        | list_action
+        | class_actions
+        | list_actions
   '''
 # Assign
 def assign(p):
@@ -230,7 +234,7 @@ def cycle_A(p):
   '''
 def loop(p): # Loop Cycle structure
   '''
-  loop : LOOP FROM ID TO loop_A BY patron built_block
+  loop : LOOP FROM ID TO loop_value BY patron built_block
   '''
 def loop_value(p):
   '''
@@ -252,7 +256,7 @@ def patron_A(p):
   '''
 def until(p):
   '''
-  until : UNTIL hyper_exp IS bool_values DO cycle_B
+  until : UNTIL hyper_exp IS bool_values DO built_block
   '''
 # Condition
 def condition(p):
@@ -304,7 +308,7 @@ def writing_A1(p):
 # Class
 def class_(p):
   '''
-  class : CLASS_ID heritance IS class_attributes class_methods END
+  class_ : CLASS_ID heritance IS class_attributes class_methods END
   '''
 def heritance(p):
   '''
@@ -332,13 +336,14 @@ def class_methods(p):
   '''
 def methods(p):
   '''
-  methods : constructor constructor methods_A
+  methods : constructor methods_A
   '''
 def methods_A(p):
   '''
   methods_A : visibility function methods_A
             | empty
   '''
+# Constructor
 def constructor(p):
   '''
   constructor : visibility CLASS_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
@@ -352,6 +357,48 @@ def visibility(p):
   '''
   visibility : PUBLIC
              | PRIVATE
+  '''
+# Class Declaration
+def declaration_class(p):
+  '''
+  declaration_class : CLASS_ID ID declaration_class_A
+  '''
+def declaration_class_A(p):
+  '''
+  declaration_class_A : COMMA ID declaration_class_A
+                      | empty
+  '''
+# Assign class to variable
+def assign_class(p):
+  '''
+  assign_class : ID EQUAL assign_class_A
+  '''
+def assign_class_A(p):
+  '''
+  assign_class_A : ID
+                 | CLASS_ID DOT NEW OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+  '''
+# Class Values
+def class_values(p):
+  '''
+  class_values : call_method
+               | call_attribute
+  '''
+# Class Actions
+def class_actions(p):
+  '''
+  class_actions : declaration_class
+                | assign_class
+  '''
+# Call Attribute
+def call_attribute(p):
+  '''
+  call_attribute : ID DOT ID
+  '''
+# Call Method
+def call_method(p):
+  '''
+  call_method : ID DOT FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
   '''
 ############################### General Real Value Grammars
 # Block for Condition and Cycles
