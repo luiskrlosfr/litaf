@@ -5,120 +5,172 @@ from lexer import tokens
 # Start
 def p_start(p):
   '''
-  start : LITAF START DOUBLEDOT program END
+  start : LITAF START DOUBLE_DOT program main END
   '''
-  p[0] = p[1] + " " + p[2] + " " + p[3] + " " + p[4] + p[5]
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Program
 def p_program(p):
   '''
-  program : program_A MAIN
+  program : program_A
+          | program_A program
   '''
-  p[0] = p[1] + p[2] + " "
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 def p_program_A(p):
   '''
-  program_A : program_A1
-            | program_A program_A1
-  '''
-def p_program_A1(p):
-  '''
-  program_A1 : declaration
+  program_A : declaration
             | assign_simple
             | function
-            | class_
+            | class
             | empty
   '''
+  p[0] = p[1]
 # Main
 def p_main(p):
   '''
-  main : FUN MAIN OPEN_PARENTHESIS CLOSE_PARENTHESIS IS INT main_A main_B END
+  main : FUN MAIN OPEN_PARENTHESIS CLOSE_PARENTHESIS IS INT main_A WITH INT_CONST END
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 def p_main_A(p):
   '''
   main_A : statement main_A
          | empty
   '''
-def p_main_B(p):
-  '''
-  main_B : WITH 0
-         | empty
-  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Declaration
 def p_declaration(p):
   '''
-  declaration : type_val declaration_A
+  declaration : type declaration_A
   '''
+  p[0] = p[1] + p[2]
 def p_declaration_A(p):
   '''
   declaration_A : ID declaration_A1
   '''
+  p[0] = p[1] + p[2]
 def p_declaration_A1(p):
   '''
   declaration_A1 : COMMA declaration_A
                 | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Assign Simple (for global variables)
 def p_assign_simple(p):
   '''
   assign_simple : ID EQUAL assign_simple_A
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 def p_assign_simple_A(p):
   '''
   assign_simple_A : value
                   | list_values
   '''
+  p[0] = p[1]
 # Function
 def p_function(p):
   '''
   function : FUN FUNCTION_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS function_B function_C function_D END
   '''
-def function_A(p): # Parameters for declaring functions
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_function_A(p): # Parameters for declaring functions
   '''
-  function_A : type_val ID function_A1
+  function_A : type ID function_A1
   '''
-def function_A1(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_function_A1(p):
   '''
   function_A1 : COMMA function_A
               | empty
   '''
-def function_B(p): # Type of return value (includes void)
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_function_B(p): # Type of return value (includes void)
   '''
-  function_B : type_val
+  function_B : type
              | VOID
   '''
-def function_C(p): # Statements inside function
+  p[0] = p[1]
+def p_function_C(p): # Statements inside function
   '''
   function_C : statement
              | statement function_C
   '''
-def function_D(p): # Return value for function
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_function_D(p): # Return value for function
   '''
   function_D : WITH value
              | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Function Call
-def function_call(p):
+def p_function_call(p):
   '''
   function_call : FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
   '''
-def function_call_A(p): # Parameters for function call
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_function_call_A(p): # Parameters for function call
   '''
   function_call_A : hyper_exp function_call_A1
                   | empty
   '''
-def function_call_A1(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_function_call_A1(p):
   '''
   function_call_A1 : COMMA hyper_exp function_call_A1
                    | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Statement
-def statement(p):
+def p_statement(p):
   '''
   statement : declaration
             | block
             | declaration_class
+            | declaration_list
   '''
+  p[0] = p[1]
 # Block
-def block(p):
+def p_block(p):
   '''
   block : assign
         | hyper_exp
@@ -130,294 +182,614 @@ def block(p):
         | class_actions
         | list_actions
   '''
+  p[0] = p[1]
 # Assign
-def assign(p):
+def p_assign(p):
   '''
   assign : ID EQUAL assign_A
   '''
-def assign_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_assign_A(p):
   '''
   assign_A : hyper_exp
-           | function_call
-           | class_values
-           | list_values
   '''
+  p[0] = p[1]
 # Hyper Exp
-def hyper_exp(p):
+def p_hyper_exp(p):
   '''
   hyper_exp : mega_exp hyper_exp_A
   '''
-def hyper_exp_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_hyper_exp_A(p):
   '''
   hyper_exp_A : NOT hyper_exp
               | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Mega Exp
-def mega_exp(p):
+def p_mega_exp(p):
   '''
   mega_exp : super_exp mega_exp_A
   '''
-def mega_exp_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_mega_exp_A(p):
   '''
   mega_exp_A : mega_exp_A1 mega_exp
              | empty
   '''
-def mega_exp_A1(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_mega_exp_A1(p):
   '''
   mega_exp_A1 : AND
               | OR
   '''
+  p[0] = p[1]
 # Super Exp
-def super_exp(p):
+def p_super_exp(p):
   '''
   super_exp : exp super_exp_A
   '''
-def super_exp_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_super_exp_A(p):
   '''
   super_exp_A : super_exp_A1 super_exp
               | empty
   '''
-def super_exp_A1(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_super_exp_A1(p):
   '''
   super_exp_A1 : LESS_THAN
                | MORE_THAN
                | EQUAL_EQUAL
                | LESS_EQUAL
                | MORE_EQUAL
-               | NOT_EQUAL
+               | DIFFERENT_FROM
   '''
+  p[0] = p[1]
 # Exp
-def exp(p):
+def p_exp(p):
   '''
   exp : term exp_A
   '''
-def exp_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_exp_A(p):
   '''
   exp_A : exp_A1 exp
         | empty
   '''
-def exp_A1(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_exp_A1(p):
   '''
   exp_A1 : PLUS
          | MINUS
   '''
+  p[0] = p[1]
 # Term
-def term(p):
+def p_term(p):
   '''
   term : factor term_A
   '''
-def term_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_term_A(p):
   '''
   term_A : term_A1 term
          | empty
   '''
-def term_A1(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_term_A1(p):
   '''
   term_A1 : MULTIPLY
           | DIVIDE
   '''
+  p[0] = p[1]
 # Factor
-def factor(p):
+def p_factor(p):
   '''
   factor : value
          | OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Cycle call
-def cycle(p):
+def p_cycle(p):
   '''
   cycle : cycle_A END
   '''
-def cycle_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_cycle_A(p):
   '''
   cycle_A : loop
           | until
   '''
-def loop(p): # Loop Cycle structure
+  p[0] = p[1]
+def p_loop(p): # Loop Cycle structure
   '''
   loop : LOOP FROM ID TO loop_value BY patron built_block
   '''
-def loop_value(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_loop_value(p):
   '''
   loop_value : ID
              | INT_CONST
              | list_val
              | class_values
   '''
-def patron(p):
+  p[0] = p[1]
+def p_patron(p):
   '''
   patron : patron_A loop_value
   '''
-def patron_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_patron_A(p):
   '''
   patron_A : PLUS
            | MINUS
            | MULTIPLY
            | DIVIDE
   '''
-def until(p):
+  p[0] = p[1]
+def p_until(p):
   '''
   until : UNTIL hyper_exp IS bool_values DO built_block
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Condition
-def condition(p):
+def p_condition(p):
   '''
   condition : IF condition_exp built_block condition_A condition_B END
   '''
-def condition_exp(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_condition_exp(p):
   '''
   condition_exp : OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
   '''
-def condition_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_condition_A(p):
   '''
   condition_A : ELSIF condition_exp built_block condition_A
               | empty
   '''
-def condition_B(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_condition_B(p):
   '''
   condition_B : ELSE built_block
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Lecture
-def lecture(p):
+def p_lecture(p):
   '''
   lecture : IN OPEN_PARENTHESIS lecture_A CLOSE_PARENTHESIS
   '''
-def lecture_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_lecture_A(p):
   '''
   lecture_A : ID lecture_A1
   '''
-def lecture_A1(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_lecture_A1(p):
   '''
   lecture_A1 : COMMA lecture_A
              | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Writing
-def writing(p):
+def p_writing(p):
   '''
   writing : OUT OPEN_PARENTHESIS writing_A CLOSE_PARENTHESIS
   '''
-def writing_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_writing_A(p):
   '''
   writing_A : hyper_exp writing_A1
   '''
-def writing_A1(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_writing_A1(p):
   '''
   writing_A1 : COMMA writing_A
              | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 ############################### Class Related Grammar
 # Class
-def class_(p):
+def p_class(p):
   '''
-  class_ : CLASS_ID heritance IS class_attributes class_methods END
+  class : CLASS CLASS_ID heritance IS class_attributes class_methods END
   '''
-def heritance(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_heritance(p):
   '''
   heritance : FROM CLASS_ID
             | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Attributes
-def class_attributes(p):
+def p_class_attributes(p):
   '''
   class_attributes : ATTRIBUTES DOUBLE_DOT attributes END
   '''
-def attributes(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_attributes(p):
   '''
   attributes : attributes_A attributes
              | empty
   '''
-def attributes_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_attributes_A(p):
   '''
-  attributes_A : visibility type_val ID
+  attributes_A : visibility type ID
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Methods
-def class_methods(p):
+def p_class_methods(p):
   '''
   class_methods : METHODS DOUBLE_DOT methods END
   '''
-def methods(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_methods(p):
   '''
   methods : constructor methods_A
   '''
-def methods_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_methods_A(p):
   '''
   methods_A : visibility function methods_A
             | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Constructor
-def constructor(p):
+def p_constructor(p):
   '''
   constructor : visibility CLASS_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
   '''
-def constructor_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_constructor_A(p):
   '''
   constructor_A : statement constructor_A
                 | empty
   '''
-def visibility(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_visibility(p):
   '''
   visibility : PUBLIC
              | PRIVATE
   '''
+  p[0] = p[1]
 # Class Declaration
-def declaration_class(p):
+def p_declaration_class(p):
   '''
   declaration_class : CLASS_ID ID declaration_class_A
   '''
-def declaration_class_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_declaration_class_A(p):
   '''
   declaration_class_A : COMMA ID declaration_class_A
                       | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Assign class to variable
-def assign_class(p):
+def p_assign_class(p):
   '''
   assign_class : ID EQUAL assign_class_A
   '''
-def assign_class_A(p):
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_assign_class_A(p):
   '''
   assign_class_A : ID
                  | CLASS_ID DOT NEW OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Class Values
-def class_values(p):
+def p_class_values(p):
   '''
   class_values : call_method
                | call_attribute
   '''
+  p[0] = p[1]
 # Class Actions
-def class_actions(p):
+def p_class_actions(p):
   '''
   class_actions : declaration_class
                 | assign_class
   '''
+  p[0] = p[1]
 # Call Attribute
-def call_attribute(p):
+def p_call_attribute(p):
   '''
   call_attribute : ID DOT ID
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Call Method
-def call_method(p):
+def p_call_method(p):
   '''
   call_method : ID DOT FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
   '''
-############################### General Real Value Grammars
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+############################### Lists (Vectors) Related Grammars
+# List
+def p_list(p):
+  '''
+  list : OPEN_BRACKET function_call_A CLOSE_BRACKET
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+# List Actions
+def p_list_actions(p):
+  '''
+  list_actions : list_methods
+               | declaration_list
+               | assign_list
+  '''
+  p[0] = p[1]
+# List Declaration
+def p_declaration_list(p):
+  '''
+  declaration_list : LIS ID declaration_list_A1
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_declaration_list_A1(p):
+  '''
+  declaration_list_A1 : COMMA ID declaration_list_A1
+                      | empty
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+# List Assignment
+def p_assign_list(p):
+  '''
+  assign_list : ID EQUAL assign_list_A
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_assign_list_A(p):
+  '''
+  assign_list_A : ID
+                | list
+  '''
+  p[0] = p[1]
+# List Values
+def p_list_values(p):
+  '''
+  list_values : list_val
+              | list_pop
+  '''
+  p[0] = p[1]
+# List Value (Single)
+def p_list_val(p):
+  '''
+  list_val : OPEN_BRACKET INT_CONST CLOSE_BRACKET
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+# List Methods
+def p_list_methods(p):
+  '''
+  list_methods : list_pop
+               | list_push
+               | list_size
+               | list_concat
+               | list_empty
+               | list_reverse
+  '''
+  p[0] = p[1]
+# List Pop
+def p_list_pop(p):
+  '''
+  list_pop : ID DOT POP OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+# List Push
+def p_list_push(p):
+  '''
+  list_push : ID DOT PUSH OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+# List Size
+def p_list_size(p):
+  '''
+  list_size : ID DOT SIZE OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+# List Concat
+def p_list_concat(p):
+  '''
+  list_concat : ID DOT JOIN OPEN_PARENTHESIS list_concat_A CLOSE_PARENTHESIS
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+def p_list_concat_A(p):
+  '''
+  list_concat_A : ID
+                | list
+  '''
+  p[0] = p[1]
+# List Empty
+def p_list_empty(p):
+  '''
+  list_empty : ID DOT EMPTY OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+# List Reverse
+def p_list_reverse(p):
+  '''
+  list_reverse : ID DOT FLIP OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+############################### General Real Value Grammars (These are used or called by many different grammar rules)
 # Block for Condition and Cycles
-def built_block(p):
+def p_built_block(p):
   '''
   built_block : block built_block
               | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 # Type Val
-def type_val(p):
+def p_type(p):
   '''
-  type_val : INT
-           | FLO
-           | BOO
-           | CHA
-           | STR
+  type : INT
+       | FLO
+       | BOO
+       | CHA
+       | STR
   '''
+  p[0] = p[1]
 # Value
-def value(p):
+def p_value(p):
   '''
   value : ID
         | constants
@@ -425,8 +797,9 @@ def value(p):
         | class_values
         | function_call
   '''
+  p[0] = p[1]
 # Constants
-def constants(p):
+def p_constants(p):
   '''
   constants : INT_CONST
             | CHAR_CONST
@@ -434,12 +807,14 @@ def constants(p):
             | STRING_CONST
             | bool_values
   '''
+  p[0] = p[1]
 # Bool Values
-def bool_values(p):
+def p_bool_values(p):
   '''
   bool_values : TRUE
               | FALSE
   '''
+  p[0] = p[1]
 # Empty
 def p_empty(p):
   '''
@@ -453,3 +828,13 @@ def p_error(p):
 
 # Build the parser
 parser = yacc.yacc()
+
+# Read file as an input and evaluate if the grammar is acceptable or not. Print a message if it finds an error
+# in the grammar.
+print("Teclea el nombre del archivo de texto")
+name = input('parser >> ')
+
+with open(name, 'r') as myfile:
+  line = myfile.read().replace('\n', '')
+  result = parser.parse(line)
+  print(result)

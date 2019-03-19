@@ -163,16 +163,13 @@ tokens = tokens + list(reserved.values())
 lexer = lex.lex()
 
 # Some Tests
-# lexer.input("123.45") # -> CTE_FLOAT token
-# tok = lexer.token()
-# print(tok)
 # lexer.input("12345") # -> CTE_INT token
 # tok = lexer.token()
 # print(tok)
 # lexer.input("\"1234567.1245\"") # -> CTE_STRING token
 # tok = lexer.token()
 # print(tok)
-# lexer.input("litaf start : 'H' end") # -> PROGRAM ID DOUBLEDOT OPENKEY CLOSEKEY tokens
+# lexer.input("litaf start :  fun main() is int with 0 end end") # -> PROGRAM ID DOUBLEDOT OPENKEY CLOSEKEY tokens
 # while True:
 #   tok = lexer.token()
 #   if not tok:
