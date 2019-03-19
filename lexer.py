@@ -31,7 +31,7 @@ tokens = [
   'CLOSE_PARENTHESIS',             
   'OPEN_BRACKET',
   'CLOSE_BRACKET',
-  'PERCENTAGE',              # Comments
+  'COMMENT',              # Comments
   'DOT',                     # Assignation and Calls
   'COMMA',
   'DOUBLE_DOT',
@@ -108,10 +108,13 @@ t_COMMA = r'\,'
 t_DOUBLE_DOT = r'\:'
 t_EQUAL = r'\='
 t_UNDERSCORE = r'\_'
-t_PERCENTAGE = r'\%'
 t_ignore = r' '
 
 # Define complex terminal tokens
+def t_COMMENT(t):
+  r"\%[^%]*\%"
+  t.type = reserved.get(t.value, 'COMMENT')
+  return t
 def t_CLASS_ID(t):
   r"([A-Z][a-z]+)+"
   t.type = reserved.get(t.value, 'CLASS_ID')
