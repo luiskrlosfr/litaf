@@ -14,8 +14,8 @@ def p_start(p):
 # Program
 def p_program(p):
   '''
-  program : program_A
-          | program_A program
+  program : program_A program
+          | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -24,16 +24,16 @@ def p_program(p):
 def p_program_A(p):
   '''
   program_A : declaration
-            | assign_simple
+            | assign
             | function
             | class
-            | empty
+            | COMMENT
   '''
   p[0] = p[1]
 # Main
 def p_main(p):
   '''
-  main : FUN MAIN OPEN_PARENTHESIS CLOSE_PARENTHESIS IS INT main_A WITH INT_CONST END
+  main : MAIN IS INT main_A WITH INT_CONST END
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -68,19 +68,20 @@ def p_declaration_A1(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-# Assign Simple (for global variables)
-def p_assign_simple(p):
+# Assign
+def p_assign(p):
   '''
-  assign_simple : ID EQUAL assign_simple_A
+  assign : ID EQUAL assign_A
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_assign_simple_A(p):
+def p_assign_A(p):
   '''
-  assign_simple_A : value
-                  | list_values
+  assign_A : hyper_exp
+                  | CLASS_ID DOT NEW OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+                  | list
   '''
   p[0] = p[1]
 # Function
@@ -176,25 +177,10 @@ def p_block(p):
         | hyper_exp
         | cycle
         | condition
-        | function_call
         | lecture
         | writing
-        | class_actions
-        | list_actions
-  '''
-  p[0] = p[1]
-# Assign
-def p_assign(p):
-  '''
-  assign : ID EQUAL assign_A
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
-def p_assign_A(p):
-  '''
-  assign_A : hyper_exp
+        | list_methods
+        | COMMENT
   '''
   p[0] = p[1]
 # Hyper Exp
@@ -350,10 +336,7 @@ def p_loop(p): # Loop Cycle structure
   p[0]
 def p_loop_value(p):
   '''
-  loop_value : ID
-             | INT_CONST
-             | list_val
-             | class_values
+  loop_value : hyper_exp
   '''
   p[0] = p[1]
 def p_patron(p):
@@ -579,36 +562,11 @@ def p_declaration_class_A(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-# Assign class to variable
-def p_assign_class(p):
-  '''
-  assign_class : ID EQUAL assign_class_A
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
-def p_assign_class_A(p):
-  '''
-  assign_class_A : ID
-                 | CLASS_ID DOT NEW OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
 # Class Values
 def p_class_values(p):
   '''
   class_values : call_method
                | call_attribute
-  '''
-  p[0] = p[1]
-# Class Actions
-def p_class_actions(p):
-  '''
-  class_actions : declaration_class
-                | assign_class
   '''
   p[0] = p[1]
 # Call Attribute
@@ -639,14 +597,6 @@ def p_list(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-# List Actions
-def p_list_actions(p):
-  '''
-  list_actions : list_methods
-               | declaration_list
-               | assign_list
-  '''
-  p[0] = p[1]
 # List Declaration
 def p_declaration_list(p):
   '''
@@ -665,21 +615,6 @@ def p_declaration_list_A1(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-# List Assignment
-def p_assign_list(p):
-  '''
-  assign_list : ID EQUAL assign_list_A
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
-def p_assign_list_A(p):
-  '''
-  assign_list_A : ID
-                | list
-  '''
-  p[0] = p[1]
 # List Values
 def p_list_values(p):
   '''
@@ -690,7 +625,7 @@ def p_list_values(p):
 # List Value (Single)
 def p_list_val(p):
   '''
-  list_val : OPEN_BRACKET INT_CONST CLOSE_BRACKET
+  list_val : ID OPEN_BRACKET INT_CONST CLOSE_BRACKET
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -699,8 +634,7 @@ def p_list_val(p):
 # List Methods
 def p_list_methods(p):
   '''
-  list_methods : list_pop
-               | list_push
+  list_methods : list_push
                | list_size
                | list_concat
                | list_empty
