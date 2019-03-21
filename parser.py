@@ -80,8 +80,8 @@ def p_assign(p):
 def p_assign_A(p):
   '''
   assign_A : hyper_exp
-                  | CLASS_ID DOT NEW OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
-                  | list
+           | CLASS_ID DOT NEW OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+           | list
   '''
   p[0] = p[1]
 # Function
@@ -96,6 +96,7 @@ def p_function(p):
 def p_function_A(p): # Parameters for declaring functions
   '''
   function_A : type ID function_A1
+             | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -103,7 +104,7 @@ def p_function_A(p): # Parameters for declaring functions
   p[0]
 def p_function_A1(p):
   '''
-  function_A1 : COMMA function_A
+  function_A1 : COMMA type ID function_A1
               | empty
   '''
   p[0] = ""
@@ -127,7 +128,7 @@ def p_function_C(p): # Statements inside function
   p[0]
 def p_function_D(p): # Return value for function
   '''
-  function_D : WITH value
+  function_D : WITH hyper_exp
              | empty
   '''
   p[0] = ""
@@ -392,6 +393,7 @@ def p_condition_A(p):
 def p_condition_B(p):
   '''
   condition_B : ELSE built_block
+              | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
