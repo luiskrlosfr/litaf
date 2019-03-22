@@ -1,4 +1,4 @@
-# Lexer for defininf all Tokens
+# Lexer for defining all Tokens
 
 import ply.lex as lex
 import sys
@@ -8,7 +8,6 @@ tokens = [
   'ID',                     # ID's
   'CLASS_ID',
   'FUNCTION_ID',
-  'UNDERSCORE',             # Underscore
   'INT_CONST',              # Constant Values
   'FLOAT_CONST',
   'CHAR_CONST',
@@ -31,7 +30,7 @@ tokens = [
   'CLOSE_PARENTHESIS',             
   'OPEN_BRACKET',
   'CLOSE_BRACKET',
-  'PERCENTAGE',              # Comments
+  'COMMENT',              # Comments
   'DOT',                     # Assignation and Calls
   'COMMA',
   'DOUBLE_DOT',
@@ -51,6 +50,7 @@ reserved = {
   'void'       : 'VOID',
   'true'       : 'TRUE',
   'false'      : 'FALSE',
+  'main'       : 'MAIN',
   'with'       : 'WITH',
   'end'        : 'END',
   'in'         : 'IN',
@@ -106,18 +106,21 @@ t_SINGLE_QUOTE = r'\''
 t_COMMA = r'\,'
 t_DOUBLE_DOT = r'\:'
 t_EQUAL = r'\='
-t_UNDERSCORE = r'\_'
-t_PERCENTAGE = r'\%'
 t_ignore = r' '
 
 # Define complex terminal tokens
+def t_COMMENT(t):
+  r"\%[^%]*\%"
+  t.type = reserved.get(t.value, 'COMMENT')
+  return t
+
 def t_CLASS_ID(t):
   r"([A-Z][a-z]+)+"
   t.type = reserved.get(t.value, 'CLASS_ID')
   return t
 
 def t_FUNCTION_ID(t):
-  r"[a-z]+(\_[a-z]+)*"
+  r"[A-Z]+(\_[A-Z]+)*"
   t.type = reserved.get(t.value, 'FUNCTION_ID')
   return t
 
@@ -159,7 +162,7 @@ tokens = tokens + list(reserved.values())
 lexer = lex.lex()
 
 # Some Tests
-# lexer.input("123.45") # -> CTE_FLOAT token
+# lexer.input("x") # -> CTE_INT token
 # tok = lexer.token()
 # print(tok)
 # lexer.input("12345") # -> CTE_INT token
@@ -168,13 +171,19 @@ lexer = lex.lex()
 # lexer.input("\"1234567.1245\"") # -> CTE_STRING token
 # tok = lexer.token()
 # print(tok)
-# lexer.input("litaf start : 'H' end") # -> PROGRAM ID DOUBLEDOT OPENKEY CLOSEKEY tokens
+# lexer.input("litaf start :  fun main() is int with 0 end end") # -> PROGRAM ID DOUBLEDOT OPENKEY CLOSEKEY tokens
 # while True:
 #   tok = lexer.token()
 #   if not tok:
 #     break
 #   print(tok)
 # lexer.input("+ - * / = , % true false") # -> PLUS MINUS MULTIPLY DIVIDE EQUAL SEMICOLON COMMA tokens
+# while True:
+#   tok = lexer.token()
+#   if not tok:
+#     break
+#   print(tok)
+# lexer.input("litaf start :fun SWAG() is void end main is int x3 + 5 + FIBONACCI(3) out('A') with 0 end end") # -> PROGRAM ID DOUBLEDOT OPENKEY CLOSEKEY tokens
 # while True:
 #   tok = lexer.token()
 #   if not tok:
