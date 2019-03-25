@@ -106,7 +106,7 @@ t_SINGLE_QUOTE = r'\''
 t_COMMA = r'\,'
 t_DOUBLE_DOT = r'\:'
 t_EQUAL = r'\='
-t_ignore = r' '
+t_ignore = ' \t\n'
 
 # Define complex terminal tokens
 def t_COMMENT(t):
@@ -184,6 +184,12 @@ lexer = lex.lex()
 #     break
 #   print(tok)
 # lexer.input("litaf start :fun SWAG() is void end main is int x3 + 5 + FIBONACCI(3) out('A') with 0 end end") # -> PROGRAM ID DOUBLEDOT OPENKEY CLOSEKEY tokens
+# while True:
+#   tok = lexer.token()
+#   if not tok:
+#     break
+#   print(tok)
+# lexer.input("litaf start : fun SWAG() is void end main is int x3 + 5 + FIBONACCI(3) out('A') with 0 end end") # -> PROGRAM ID DOUBLEDOT OPENKEY CLOSEKEY tokens
 # while True:
 #   tok = lexer.token()
 #   if not tok:

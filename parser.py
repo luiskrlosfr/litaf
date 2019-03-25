@@ -5,29 +5,38 @@ from lexer import tokens
 # Start
 def p_start(p):
   '''
-  start : LITAF START DOUBLE_DOT program main END
+  start : LITAF START DOUBLE_DOT classes global_vars functions main END
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-# Program
-def p_program(p):
+# Classes
+def p_classes(p):
   '''
-  program : program_A program
+  classes : class classes
           | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_program_A(p):
+# Global Vars
+def p_global_vars(p):
   '''
-  program_A : declaration
-            | assign
-            | function
-            | class
-            | COMMENT
+  global_vars : declarations global_vars
+              | empty
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+# Declarations
+def p_declarations(p):
+  '''
+  declarations : declaration
+               | declaration_class
+               | declaration_list
   '''
   p[0] = p[1]
 # Main
@@ -43,6 +52,16 @@ def p_main_A(p):
   '''
   main_A : statement main_A
          | empty
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+# Functions
+def p_functions(p):
+  '''
+  functions : function functions
+            | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -119,8 +138,8 @@ def p_function_B(p): # Type of return value (includes void)
   p[0] = p[1]
 def p_function_C(p): # Statements inside function
   '''
-  function_C : statement
-             | statement function_C
+  function_C : statement function_C
+             | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
