@@ -1,0 +1,4 @@
+# Ignore compiled files
+parser.out
+*.pyc
+parsetab.py
