@@ -1,6 +1,13 @@
 class VarTable:
   def __init__(self):
-    self.vars = []
+    self.vars = {}
 
-  def push(self, varType, varName):
-    self.vars.append([varType, varName])
+  def push(self, varName, varType):
+    self.vars[varName] = varType
+
+class ScopeTable:
+  def __init__(self):
+    self.scopes = {}
+
+  def push(self, scopeName, scopeType, varTable):
+    self.scopes[scopeName] = [scopeType, varTable]
