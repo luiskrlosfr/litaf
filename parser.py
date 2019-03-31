@@ -7,6 +7,7 @@ scopeTable = ScopeTable()
 actualScope = 'global'
 actualType = 'void'
 funVariables = []
+classMethods = []
 
 # Start
 def p_start(p):
@@ -157,7 +158,8 @@ def p_function_A(p): # Parameters for declaring functions
              | empty
   '''
   global funVariables
-  funVariables.append([p[2], p[1]])
+  if p[1] != "":
+    funVariables.append([p[2], p[1]])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -178,7 +180,6 @@ def p_function_B(p): # Type of return value (includes void)
   '''
   global actualType
   actualType = p[1]
-  print(actualType)
   p[0] = p[1]
 def p_function_C(p): # Statements inside function
   '''
@@ -520,6 +521,7 @@ def p_class(p):
   '''
   global actualScope
   global funVariables
+  global classMethods
   actualScope = p[2]
   if p[2] in scopeTable.scopes:
     print("Error: Función '{}' ya existe").format(p[2])
@@ -528,6 +530,12 @@ def p_class(p):
     for var in funVariables:
       scopeTable.scopes[actualScope][1].push(var[0], var[1])
   funVariables = []
+  # Create scope table for each class method as CLASSID_FUNID
+  # for scope in classMethods:
+  #   if (p[1] + "_" + scope[0]) in scopeTable:
+  #     print("Error: Método '{}' ya existe en la clase '{}'").format(scope[1], p[2])
+  #   else
+  #     scopeTable.push(p[1] + "_" + scope[0], scope[1],scope[2])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -600,6 +608,15 @@ def p_constructor(p):
   '''
   constructor : visibility CLASS_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
   '''
+  global funVariables
+  actualScope = p[2] + '_' + p[2]
+  if p[2] in scopeTable.scopes:
+    print("Error: Función '{}' ya existe").format(p[2])
+  else:
+    scopeTable.push(actualScope, p[7], VarTable())
+    for var in funVariables:
+      scopeTable.scopes[actualScope][1].push(var[0], var[1])
+  funVariables = []
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
