@@ -1,0 +1,6 @@
+# Ignore compiled files
+parser.out
+*.pyc
+parsetab.py
+test.txt
+__pycache__

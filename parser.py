@@ -1,6 +1,12 @@
 # Parser for defining all grammar rules
 import ply.yacc as yacc
+from vartable import VarTable, ScopeTable
 from lexer import tokens
+
+scopeTable = ScopeTable()
+actualScope = 'global'
+actualType = 'void'
+funVariables = []
 
 # Start
 def p_start(p):
@@ -27,6 +33,15 @@ def p_global_vars(p):
   global_vars : declarations global_vars
               | empty
   '''
+  global scopeTable
+  global funVariables
+  if "global" in scopeTable.scopes:
+    print("Error: Función 'global' ya existe")
+  else:
+    scopeTable.push("global", "void", VarTable())
+    for var in funVariables:
+      scopeTable.scopes["global"][1].push(var[0], var[1])
+  funVariables = []
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -44,6 +59,15 @@ def p_main(p):
   '''
   main : MAIN IS INT main_A WITH INT_CONST END
   '''
+  global scopeTable
+  global funVariables
+  if "main" in scopeTable.scopes:
+    print("Error: Función 'main' ya existe")
+  else:
+    scopeTable.push("main", "int", VarTable())
+    for var in funVariables:
+      scopeTable.scopes["main"][1].push(var[0], var[1])
+  funVariables = []
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -70,18 +94,23 @@ def p_functions(p):
 # Declaration
 def p_declaration(p):
   '''
-  declaration : type declaration_A
+  declaration : function_B declaration_A
   '''
   p[0] = p[1] + p[2]
 def p_declaration_A(p):
   '''
   declaration_A : ID declaration_A1
   '''
+  global funVariables
+  if p[1] in scopeTable.scopes[actualScope][1].vars:
+    print("Error: Variable '{}' ya definida").format(p[1])
+  else:
+    funVariables.append([p[1], actualType])
   p[0] = p[1] + p[2]
 def p_declaration_A1(p):
   '''
   declaration_A1 : COMMA declaration_A
-                | empty
+                 | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -108,6 +137,16 @@ def p_function(p):
   '''
   function : FUN FUNCTION_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS function_B function_C function_D END
   '''
+  global actualScope
+  global funVariables
+  actualScope = p[2]
+  if p[2] in scopeTable.scopes:
+    print("Error: Función '{}' ya existe").format(p[2])
+  else:
+    scopeTable.push(p[2], p[7], VarTable())
+    for var in funVariables:
+      scopeTable.scopes[actualScope][1].push(var[0], var[1])
+  funVariables = []
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -117,6 +156,8 @@ def p_function_A(p): # Parameters for declaring functions
   function_A : type ID function_A1
              | empty
   '''
+  global funVariables
+  funVariables.append([p[2], p[1]])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -135,6 +176,9 @@ def p_function_B(p): # Type of return value (includes void)
   function_B : type
              | VOID
   '''
+  global actualType
+  actualType = p[1]
+  print(actualType)
   p[0] = p[1]
 def p_function_C(p): # Statements inside function
   '''
@@ -184,10 +228,8 @@ def p_function_call_A1(p):
 # Statement
 def p_statement(p):
   '''
-  statement : declaration
+  statement : declarations
             | block
-            | declaration_class
-            | declaration_list
   '''
   p[0] = p[1]
 # Block
@@ -476,6 +518,16 @@ def p_class(p):
   '''
   class : CLASS CLASS_ID heritance IS class_attributes class_methods END
   '''
+  global actualScope
+  global funVariables
+  actualScope = p[2]
+  if p[2] in scopeTable.scopes:
+    print("Error: Función '{}' ya existe").format(p[2])
+  else:
+    scopeTable.push(p[2], 'class', VarTable())
+    for var in funVariables:
+      scopeTable.scopes[actualScope][1].push(var[0], var[1])
+  funVariables = []
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -511,6 +563,8 @@ def p_attributes_A(p):
   '''
   attributes_A : visibility type ID
   '''
+  global funVariables
+  funVariables.append([p[3], p[2]])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -578,8 +632,7 @@ def p_declaration_class_A(p):
   '''
   declaration_class_A : COMMA ID declaration_class_A
                       | empty
-  '''
-  p[0] = ""
+  '''  
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
@@ -792,4 +845,8 @@ name = input('parser >> ')
 with open(name, 'r') as myfile:
   line = myfile.read().replace('\n', '')
   result = parser.parse(line)
-  print(result)
+  # print(result)
+
+print(scopeTable.scopes)
+for scope in scopeTable.scopes.values():
+  print(scope[1].vars)
