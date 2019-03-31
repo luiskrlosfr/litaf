@@ -156,6 +156,8 @@ def p_function_A(p): # Parameters for declaring functions
   function_A : type ID function_A1
              | empty
   '''
+  global funVariables
+  funVariables.append([p[2], p[1]])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -561,6 +563,8 @@ def p_attributes_A(p):
   '''
   attributes_A : visibility type ID
   '''
+  global funVariables
+  funVariables.append([p[3], p[2]])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
