@@ -66,7 +66,6 @@ class semcube:
                             'str' : 'error type mismatch'
                             'boo' : 'error type mismatch'
                             'void' : 'error type mismatch'
-
                         }}
 
                             
