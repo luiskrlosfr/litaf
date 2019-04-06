@@ -6,7 +6,6 @@ from lexer import tokens
 scopeTable = ScopeTable()
 actualScope = 'global'
 actualType = 'void'
-funVariables = []
 
 # Start
 def p_start(p):
@@ -30,22 +29,19 @@ def p_classes(p):
 # Global Vars
 def p_global_vars(p):
   '''
-  global_vars : declarations global_vars
+  global_vars : createGlobal declarations global_vars_A
               | empty
   '''
-  global scopeTable
-  global funVariables
-  if "global" in scopeTable.scopes:
-    print("Error: Función 'global' ya existe")
-  else:
-    scopeTable.push("global", "void", VarTable())
-    for var in funVariables:
-      scopeTable.scopes["global"][1].push(var[0], var[1])
-  funVariables = []
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
+def p_global_vars_A(p):
+  '''
+  global_vars_A : declarations global_vars_A
+                | empty
+  '''
 # Declarations
 def p_declarations(p):
   '''
@@ -57,17 +53,8 @@ def p_declarations(p):
 # Main
 def p_main(p):
   '''
-  main : MAIN IS INT main_A WITH INT_CONST END
+  main : MAIN setMain IS INT main_A WITH INT_CONST END
   '''
-  global scopeTable
-  global funVariables
-  if "main" in scopeTable.scopes:
-    print("Error: Función 'main' ya existe")
-  else:
-    scopeTable.push("main", "int", VarTable())
-    for var in funVariables:
-      scopeTable.scopes["main"][1].push(var[0], var[1])
-  funVariables = []
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -101,11 +88,8 @@ def p_declaration_A(p):
   '''
   declaration_A : ID declaration_A1
   '''
-  global funVariables
-  if p[1] in scopeTable.scopes[actualScope][1].vars:
-    print("Error: Variable '{}' ya definida").format(p[1])
-  else:
-    funVariables.append([p[1], actualType])
+  global actualType
+  insert_var(p[1], actualType)
   p[0] = p[1] + p[2]
 def p_declaration_A1(p):
   '''
@@ -135,18 +119,10 @@ def p_assign_A(p):
 # Function
 def p_function(p):
   '''
-  function : FUN FUNCTION_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS function_B function_C function_D END
+  function : FUN getFunId OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS function_B function_C function_D END
   '''
   global actualScope
-  global funVariables
-  actualScope = p[2]
-  if p[2] in scopeTable.scopes:
-    print("Error: Función '{}' ya existe").format(p[2])
-  else:
-    scopeTable.push(p[2], p[7], VarTable())
-    for var in funVariables:
-      scopeTable.scopes[actualScope][1].push(var[0], var[1])
-  funVariables = []
+  scopeTable.scopes[actualScope][0] = p[7]
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -156,8 +132,10 @@ def p_function_A(p): # Parameters for declaring functions
   function_A : type ID function_A1
              | empty
   '''
-  global funVariables
-  funVariables.append([p[2], p[1]])
+  global actualScope
+  global scopeTable
+  if len(p) > 2:
+    insert_var(p[2], p[1])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -167,6 +145,10 @@ def p_function_A1(p):
   function_A1 : COMMA type ID function_A1
               | empty
   '''
+  if len(p) > 2:
+    global actualScope
+    global scopeTable
+    insert_var(p[3], p[2])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -178,7 +160,6 @@ def p_function_B(p): # Type of return value (includes void)
   '''
   global actualType
   actualType = p[1]
-  print(actualType)
   p[0] = p[1]
 def p_function_C(p): # Statements inside function
   '''
@@ -516,18 +497,8 @@ def p_writing_A1(p):
 # Class
 def p_class(p):
   '''
-  class : CLASS CLASS_ID heritance IS class_attributes class_methods END
+  class : CLASS getClassId heritance IS class_attributes class_methods END
   '''
-  global actualScope
-  global funVariables
-  actualScope = p[2]
-  if p[2] in scopeTable.scopes:
-    print("Error: Función '{}' ya existe").format(p[2])
-  else:
-    scopeTable.push(p[2], 'class', VarTable())
-    for var in funVariables:
-      scopeTable.scopes[actualScope][1].push(var[0], var[1])
-  funVariables = []
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -563,8 +534,7 @@ def p_attributes_A(p):
   '''
   attributes_A : visibility type ID
   '''
-  global funVariables
-  funVariables.append([p[3], p[2]])
+  insert_var(p[3], p[2])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -833,6 +803,56 @@ def p_empty(p):
 # Simple Error
 def p_error(p):
   print("Error en la gramática")
+
+############################################### Puntos Neuralgicos
+# Create Global Scope
+def p_createGlobal(p):
+  '''
+  createGlobal : empty
+  '''
+  create_scope("global", "void")
+  p[0] = p[1]
+
+# Get Scope of Function
+def p_getFunId(p):
+  '''
+  getFunId : FUNCTION_ID
+  '''
+  create_scope(p[1], None)
+  p[0] = p[1]
+
+def p_getClassId(p):
+  '''
+  getClassId : CLASS_ID
+  '''
+  create_scope(p[1], "class")
+  p[0] = p[1]
+# Set Main scope
+def p_setMain(p):
+  '''
+  setMain : empty
+  '''
+  create_scope("main", "int")
+  p[0] = p[1]
+
+################################################## Functions
+# Function for inserting variable in scope table
+def insert_var(var, typ):
+  global actualScope
+  global scopeTable
+  if var in scopeTable.scopes[actualScope][1].vars:
+    print("Error: Variable '{}' ya definida").format(var)
+  else:
+    scopeTable.scopes[actualScope][1].push(var, typ)
+# Function for setting actual scope
+def create_scope(scope, typ):
+  global scopeTable
+  global actualScope
+  actualScope = scope
+  if actualScope in scopeTable.scopes:
+    print("Error: Función '{}' ya existe").format(actualScope)
+  else:
+    scopeTable.push(scope, typ, VarTable())
 
 # Build the parser
 parser = yacc.yacc()
