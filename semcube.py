@@ -46,10 +46,10 @@ class semcube:
                         '==':{
                             'int' : 'boo',
                             'flo' : 'boo',
-                            'cha' : 'error type mismatch',
-                            'str' : 'error type mismathc',
-                            'boo' : 'error type mismatch',
-                            'void' : 'error type mismatch'
+                            'cha' : 'boo',
+                            'str' : 'boo',
+                            'boo' : 'boo',
+                            'void' : 'boo'
                         },
                         '<':{
                             'int' : 'boo',
@@ -94,20 +94,20 @@ class semcube:
                             'void' : 'error type mismatch'
                         },
                         '||':{
-                            'int' : 'boo',
-                            'flo' : 'boo',
-                            'cha' : 'error type mismatch',
-                            'str' : 'error type mismatch',
+                            'int' : 'operator error',
+                            'flo' : 'operator error',
+                            'cha' : 'operator error',
+                            'str' : 'operator error',
                             'boo' : 'error type mismatch',
-                            'void' : 'error type mismatch'
+                            'void' : 'operator error'
                         },
                         '&&':{
-                            'int' : 'boo',
-                            'flo' : 'boo',
-                            'cha' : 'error type mismatch',
-                            'str' : 'error type mismatch',
+                            'int' : 'operator error',
+                            'flo' : 'operator error',
+                            'cha' : 'operator error',
+                            'str' : 'operator error',
                             'boo' : 'error type mismatch',
-                            'void' : 'error type mismatch'
+                            'void' : 'operator error'
                         }
                     },
                     ## TIPO FLOAT
@@ -130,19 +130,37 @@ class semcube:
                             },
                         '*':{
                             'int' : 'flo',
-                            'flo' : 'flo'
+                            'flo' : 'flo',
+                            'cha' : 'error type mismatch',
+                            'str' : 'error type mismathc',
+                            'boo' : 'error type mismatch',
+                            'void' : 'error type mismatch'
                         },
                         '/':{
                             'int' : 'error type mismatch',
-                            'flo' : 'flo'
+                            'flo' : 'flo',
+                            'cha' : 'error type mismatch',
+                            'str' : 'error type mismathc',
+                            'boo' : 'error type mismatch',
+                            'void' : 'error type mismatch'
                         },
                         '=':{
                             'int' : 'flo',
-                            'flo' : 'flo'
+                            'flo' : 'flo',
+                            'cha' : 'error type mismatch',
+                            'str' : 'error type mismathc',
+                            'boo' : 'error type mismatch',
+                            'void' : 'error type mismatch'
                         },
                         '==':{
                             'int' : 'boo'
                             'flo' : 'boo'
+                            'int' : 'boo',
+                            'flo' : 'boo',
+                            'cha' : 'boo',
+                            'str' : 'boo',
+                            'boo' : 'boo',
+                            'void' : 'boo'
                         },
                         '<':{
                             'int' : 'boo',
@@ -187,20 +205,20 @@ class semcube:
                             'void' : 'error type mismatch'
                         },
                         '||':{
-                            'int' : 'boo',
-                            'flo' : 'boo',
-                            'cha' : 'error type mismatch'
-                            'str' : 'error type mismatch'
+                            'int' : 'operator error',
+                            'flo' : 'operator error',
+                            'cha' : 'operator error'
+                            'str' : 'operator error'
                             'boo' : 'error type mismatch'
-                            'void' : 'error type mismatch'
+                            'void' : 'operator error'
                         },
                         '&&':{
-                            'int' : 'boo',
-                            'flo' : 'boo',
-                            'cha' : 'error type mismatch'
-                            'str' : 'error type mismatch'
+                            'int' : 'operator error',
+                            'flo' : 'operator error',
+                            'cha' : 'operator error'
+                            'str' : 'operator error'
                             'boo' : 'error type mismatch'
-                            'void' : 'error type mismatch'
+                            'void' : 'operator error'
                         }
                     },
                     #TIPO CHA
@@ -223,15 +241,27 @@ class semcube:
                             },
                         '*':{
                             'int' : 'error type mismatch',
-                            'flo' : 'error type mismatch'
+                            'flo' : 'error type mismatch',
+                            'cha' : 'operator error',
+                            'str' : 'operator error',
+                            'boo' : 'operator error',
+                            'void' : 'operator error'
                         },
                         '/':{
                             'int' : 'error type mismatch',
-                            'flo' : 'error type mismatch'
+                            'flo' : 'error type mismatch',
+                            'cha' : 'operator error',
+                            'str' : 'operator error',
+                            'boo' : 'operator error',
+                            'void' : 'operator error'
                         },
                         '=':{
                             'int' : 'error type mismatch',
-                            'flo' : 'error type mismatch'
+                            'flo' : 'error type mismatch',
+                            'cha' : 'cha',
+                            'str' : 'error type mismatch',
+                            'boo' : 'error type mismatch',
+                            'void' : 'operator error'
                         },
                         '==':{
                             'int' : 'boo'
@@ -244,7 +274,7 @@ class semcube:
                         '<':{
                             'int' : 'error type mismatch',
                             'flo' : 'error type mismatch',
-                            'cha' : 'error type mismatch',
+                            'cha' : 'boo',
                             'boo' : 'error type mismatch',
                             'str' : 'error type mismatch',
                             'void' : 'error type mismatch'
@@ -253,7 +283,7 @@ class semcube:
                         '>':{
                             'int' : 'error type mismatch',
                             'flo' : 'error type mismatch',
-                            'cha' : 'error type mismatch'
+                            'cha' : 'boo'
                             'str' : 'error type mismatch'
                             'boo' : 'error type mismatch'
                             'void' : 'error type mismatch'
@@ -261,7 +291,7 @@ class semcube:
                         '<=':{
                             'int' : 'error type mismatch',
                             'flo' : 'error type mismatch',
-                            'cha' : 'error type mismatch',
+                            'cha' : 'boo',
                             'boo' : 'error type mismatch',
                             'str' : 'error type mismatch',
                             'void' : 'error type mismatch'
@@ -270,7 +300,7 @@ class semcube:
                         '>=':{
                             'int' : 'error type mismatch',
                             'flo' : 'error type mismatch',
-                            'cha' : 'error type mismatch'
+                            'cha' : 'boo'
                             'str' : 'error type mismatch'
                             'boo' : 'error type mismatch'
                             'void' : 'error type mismatch'
@@ -502,20 +532,20 @@ class semcube:
                             'void' : 'boo'
                         },
                         '||':{
-                            'int' : 'operator error',
-                            'flo' : 'operator error',
-                            'cha' : 'operator error',
+                            'int' : 'error type mismatch',
+                            'flo' : 'error type mismatch',
+                            'cha' : 'error type mismatch',
                             'boo' : 'boo',
-                            'str' : 'operator error',
-                            'void' : 'operator error'
+                            'str' : 'error type mismatch',
+                            'void' : 'error type mismatch'
                         },
                         '&&':{
-                            'int' : 'operator error',
-                            'flo' : 'operator error',
-                            'cha' : 'operator error',
+                            'int' : 'error type mismatch',
+                            'flo' : 'error type mismatch',
+                            'cha' : 'error type mismatch',
                             'boo' : 'boo',
-                            'str' : 'operator error',
-                            'void' : 'operator error'
+                            'str' : 'error type mismatch',
+                            'void' : 'error type mismatch'
                         }
                     },
                     #tipo void
