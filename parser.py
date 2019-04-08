@@ -256,7 +256,7 @@ def p_hyper_exp_A(p):
 # Mega Exp
 def p_mega_exp(p):
   '''
-  mega_exp : super_exp mega_exp_A
+  mega_exp : super_exp puntAndOr mega_exp_A
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -276,11 +276,13 @@ def p_mega_exp_A1(p):
   mega_exp_A1 : AND
               | OR
   '''
+  global operators
+  operators.append(p[1])
   p[0] = p[1]
 # Super Exp
 def p_super_exp(p):
   '''
-  super_exp : exp super_exp_A
+  super_exp : exp puntLogical super_exp_A
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -304,6 +306,8 @@ def p_super_exp_A1(p):
                | MORE_EQUAL
                | DIFFERENT_FROM
   '''
+  global operators
+  operators.append(p[1])
   p[0] = p[1]
 # Exp
 def p_exp(p):
@@ -859,7 +863,6 @@ def p_puntSum(p):
   global quadruples
   global contGlobal
   global variables
-  print(variables)
   if len(operators) > 0:
     if operators[-1] == '+' or operators[-1] == '-':   
       quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
@@ -877,7 +880,6 @@ def p_puntMul(p):
   global quadruples
   global contGlobal
   global variables
-  print(variables)
   if len(operators) > 0:
     if operators[-1] == '*' or operators[-1] == '/':   
       quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
@@ -894,6 +896,34 @@ def p_appendEqual(p):
   global operators
   operators.append('=')
   p[0] = p[1]
+
+def p_puntLogical(p):
+  '''
+  puntLogical : empty
+  '''
+  global operators
+  global quadruples
+  global contGlobal
+  global variables
+  if len(operators) > 0:
+    if operators[-1] == '>' or operators[-1] == '<' or operators[-1] == '>=' or operators[-1] == '<=' or operators[-1] == '==' or operators[-1] == '!=':   
+      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
+      variables.append("t"+str(contGlobal))
+      contGlobal += 1
+def p_puntAndOr(p):
+  '''
+  puntAndOr : empty
+  '''
+  global operators
+  global quadruples
+  global contGlobal
+  global variables
+  if len(operators) > 0:
+    if operators[-1] == '||' or operators[-1] == '&&':   
+      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
+      variables.append("t"+str(contGlobal))
+      contGlobal += 1
+
 
 ################################################## Functions
 # Function for inserting variable in scope table
