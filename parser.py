@@ -1,12 +1,17 @@
 # Parser for defining all grammar rules
 import ply.yacc as yacc
+from quad import Quad
 from vartable import VarTable, ScopeTable
 from lexer import tokens
-
+from collections import deque
 scopeTable = ScopeTable()
 actualScope = 'global'
 actualType = 'void'
-
+contGlobal = 1
+quadruples = []
+operators = []
+types = []
+variables = []
 # Start
 def p_start(p):
   '''
@@ -103,8 +108,12 @@ def p_declaration_A1(p):
 # Assign
 def p_assign(p):
   '''
-  assign : ID EQUAL assign_A
+  assign : ID EQUAL appendEqual assign_A 
   '''
+  global operators
+  global quadruples
+  global variables
+  quadruples.append(Quad(operators.pop(), "", str(variables.pop()), p[1]))
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -299,9 +308,10 @@ def p_super_exp_A1(p):
 # Exp
 def p_exp(p):
   '''
-  exp : term exp_A
+  exp : term puntSum exp_A
   '''
   p[0] = ""
+  print(p[1] + " " + p[3])
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
@@ -316,14 +326,16 @@ def p_exp_A(p):
   p[0]
 def p_exp_A1(p):
   '''
-  exp_A1 : PLUS
-         | MINUS
+  exp_A1 : PLUS 
+         | MINUS 
   '''
+  global operators
+  operators.append(p[1])
   p[0] = p[1]
 # Term
 def p_term(p):
   '''
-  term : factor term_A
+  term : factor puntMul term_A
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -343,6 +355,8 @@ def p_term_A1(p):
   term_A1 : MULTIPLY
           | DIVIDE
   '''
+  global operators
+  operators.append(p[1])
   p[0] = p[1]
 # Factor
 def p_factor(p):
@@ -350,6 +364,8 @@ def p_factor(p):
   factor : value
          | OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
   '''
+  global variables
+  variables.append(p[1])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -835,6 +851,50 @@ def p_setMain(p):
   create_scope("main", "int")
   p[0] = p[1]
 
+def p_puntSum(p):
+  '''
+  puntSum : empty
+  '''
+  global operators
+  global quadruples
+  global contGlobal
+  global variables
+  print(variables)
+  if len(operators) > 0:
+    if operators[-1] == '+' or operators[-1] == '-':   
+      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
+      variables.append("t"+str(contGlobal))
+      contGlobal += 1
+
+  print(p[0])
+  p[0] = p[1]
+  
+def p_puntMul(p):
+  '''
+  puntMul : empty
+  '''
+  global operators
+  global quadruples
+  global contGlobal
+  global variables
+  print(variables)
+  if len(operators) > 0:
+    if operators[-1] == '*' or operators[-1] == '/':   
+      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
+      variables.append("t"+str(contGlobal))
+      contGlobal += 1
+
+  print(p[0])
+  p[0] = p[1]
+
+def p_appendEqual(p):
+  '''
+  appendEqual : empty
+  '''
+  global operators
+  operators.append('=')
+  p[0] = p[1]
+
 ################################################## Functions
 # Function for inserting variable in scope table
 def insert_var(var, typ):
@@ -866,7 +926,8 @@ with open(name, 'r') as myfile:
   line = myfile.read().replace('\n', '')
   result = parser.parse(line)
   # print(result)
-
 print(scopeTable.scopes)
 for scope in scopeTable.scopes.values():
   print(scope[1].vars)
+for quad in quadruples:
+  quad.print()
