@@ -474,6 +474,8 @@ def p_lecture_A(p):
   '''
   lecture_A : ID lecture_A1
   '''
+  global quadruples
+  quadruples.append(Quad('lecture', "", "", str(p[1])))
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -500,6 +502,9 @@ def p_writing_A(p):
   '''
   writing_A : hyper_exp writing_A1
   '''
+  global quadruples
+  global variables
+  quadruples.append(Quad('Writing', "", "", str(variables.pop())))
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
