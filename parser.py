@@ -315,7 +315,6 @@ def p_exp(p):
   exp : term puntSum exp_A
   '''
   p[0] = ""
-  print(p[1] + " " + p[3])
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
@@ -873,8 +872,6 @@ def p_puntSum(p):
       quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
       variables.append("t"+str(contGlobal))
       contGlobal += 1
-
-  print(p[0])
   p[0] = p[1]
   
 def p_puntMul(p):
@@ -890,8 +887,6 @@ def p_puntMul(p):
       quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
       variables.append("t"+str(contGlobal))
       contGlobal += 1
-
-  print(p[0])
   p[0] = p[1]
 
 def p_appendEqual(p):
@@ -961,8 +956,8 @@ with open(name, 'r') as myfile:
   line = myfile.read().replace('\n', '')
   result = parser.parse(line)
   # print(result)
-print(scopeTable.scopes)
-for scope in scopeTable.scopes.values():
-  print(scope[1].vars)
-for quad in quadruples:
-  quad.print()
+# print(scopeTable.scopes)
+# for scope in scopeTable.scopes.values():
+#   print(scope[1].vars)
+# for quad in quadruples:
+#   quad.print()
