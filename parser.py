@@ -365,10 +365,11 @@ def p_term_A1(p):
 def p_factor(p):
   '''
   factor : value
-         | OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
+         | OPEN_PARENTHESIS puntOP hyper_exp CLOSE_PARENTHESIS puntCP
   '''
   global variables
-  variables.append(p[1])
+  if p[1] != '(':
+    variables.append(p[1])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -923,7 +924,22 @@ def p_puntAndOr(p):
       quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
       variables.append("t"+str(contGlobal))
       contGlobal += 1
+def p_puntOP(p):
+  '''
+  puntOP : empty
+  '''
+  global operators
+  operators.append('(')
+  p[0] = p[1]
 
+def p_puntCP(p):
+  '''
+  puntCP : empty
+  '''
+  global operators
+  operators.pop()
+  p[0] = p[1]
+  
 
 ################################################## Functions
 # Function for inserting variable in scope table
@@ -959,5 +975,5 @@ with open(name, 'r') as myfile:
 # print(scopeTable.scopes)
 # for scope in scopeTable.scopes.values():
 #   print(scope[1].vars)
-# for quad in quadruples:
-#   quad.print()
+for quad in quadruples:
+   quad.print()
