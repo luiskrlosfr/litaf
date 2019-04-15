@@ -33,9 +33,7 @@ tokens = [
   'COMMENT',              # Comments
   'DOT',                     # Assignation and Calls
   'COMMA',
-  'DOUBLE_DOT',
-  'SINGLE_QUOTE',            # Strings and Chars
-  'DOUBLE_QUOTE'
+  'DOUBLE_DOT'
 ]
 
 # Tokens of Reserved Words
@@ -89,7 +87,6 @@ t_EQUAL_EQUAL = r'\=\='
 t_MORE_EQUAL = r'\>\='
 t_LESS_EQUAL = r'\<\='
 t_DIFFERENT_FROM = r'\!\='
-t_DOUBLE_QUOTE = r'\"'
 t_PLUS = r'\+'
 t_MINUS = r'\-'
 t_MULTIPLY = r'\*'
@@ -102,7 +99,6 @@ t_CLOSE_BRACKET = r'\]'
 t_OPEN_PARENTHESIS = r'\('
 t_CLOSE_PARENTHESIS = r'\)'
 t_DOT = r'\.'
-t_SINGLE_QUOTE = r'\''
 t_COMMA = r'\,'
 t_DOUBLE_DOT = r'\:'
 t_EQUAL = r'\='
