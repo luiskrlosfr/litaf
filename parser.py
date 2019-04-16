@@ -13,6 +13,7 @@ operators = []
 types = []
 variables = []
 actualVisib = None
+currentClass = ''
 # Start
 def p_start(p):
   '''
@@ -29,6 +30,8 @@ def p_classes(p):
           | empty
   '''
   global actualVisib
+  global currentClass
+  currentClass = ''
   actualVisib = None
   p[0] = ""
   for x in range(1, len(p)):
@@ -595,7 +598,7 @@ def p_methods_A(p):
 # Constructor
 def p_constructor(p):
   '''
-  constructor : visibility CLASS_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
+  constructor : visibility constructorClass OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -847,7 +850,9 @@ def p_getFunId(p):
   '''
   getFunId : FUNCTION_ID
   '''
-  create_scope(p[1], None)
+  global currentClass
+  scope = currentClass + p[1]
+  create_scope(scope, None)
   p[0] = p[1]
 
 def p_getClassId(p):
@@ -855,6 +860,18 @@ def p_getClassId(p):
   getClassId : CLASS_ID
   '''
   create_scope(p[1], "class")
+  p[0] = p[1]
+
+def p_constructorClass(p):
+  '''
+  constructorClass : CLASS_ID
+  '''
+  global currentClass
+  global actualScope
+  currentClass = p[1]
+  cuClass = currentClass + currentClass
+  actualScope = cuClass
+  create_scope(cuClass, currentClass)
   p[0] = p[1]
 # Set Main scope
 def p_setMain(p):
