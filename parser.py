@@ -12,6 +12,7 @@ quadruples = []
 operators = []
 types = []
 variables = []
+actualVisib = None
 # Start
 def p_start(p):
   '''
@@ -27,6 +28,8 @@ def p_classes(p):
   classes : class classes
           | empty
   '''
+  global actualVisib
+  actualVisib = None
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -612,6 +615,8 @@ def p_visibility(p):
   visibility : PUBLIC
              | PRIVATE
   '''
+  global actualVisib
+  actualVisib = p[1]
   p[0] = p[1]
 # Class Declaration
 def p_declaration_class(p):
@@ -930,19 +935,21 @@ def p_puntAndOr(p):
 def insert_var(var, typ):
   global actualScope
   global scopeTable
+  global actualVisib
   if var in scopeTable.scopes[actualScope][1].vars:
     print("Error: Variable '{}' ya definida").format(var)
   else:
-    scopeTable.scopes[actualScope][1].push(var, typ)
+    scopeTable.scopes[actualScope][1].push(var, typ, actualVisib)
 # Function for setting actual scope
 def create_scope(scope, typ):
   global scopeTable
   global actualScope
+  global actualVisib
   actualScope = scope
   if actualScope in scopeTable.scopes:
     print("Error: Función '{}' ya existe").format(actualScope)
   else:
-    scopeTable.push(scope, typ, VarTable())
+    scopeTable.push(scope, typ, VarTable(), actualVisib)
 
 # Build the parser
 parser = yacc.yacc()
@@ -956,8 +963,8 @@ with open(name, 'r') as myfile:
   line = myfile.read().replace('\n', '')
   result = parser.parse(line)
   # print(result)
-# print(scopeTable.scopes)
-# for scope in scopeTable.scopes.values():
-#   print(scope[1].vars)
+print(scopeTable.scopes)
+for scope in scopeTable.scopes.values():
+  print(scope[1].vars)
 # for quad in quadruples:
 #   quad.print()
