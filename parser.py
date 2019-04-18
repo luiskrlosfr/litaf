@@ -7,11 +7,13 @@ from collections import deque
 scopeTable = ScopeTable()
 actualScope = 'global'
 actualType = 'void'
-contGlobal = 1
+contGlobal = 0
 quadruples = []
 operators = []
 types = []
 variables = []
+jumps = []
+
 # Start
 def p_start(p):
   '''
@@ -113,7 +115,10 @@ def p_assign(p):
   global operators
   global quadruples
   global variables
+  global contGlobal
   quadruples.append(Quad(operators.pop(), "", str(variables.pop()), p[1]))
+  contGlobal += 1
+
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -420,7 +425,7 @@ def p_patron_A(p):
   p[0] = p[1]
 def p_until(p):
   '''
-  until : UNTIL hyper_exp IS bool_values DO built_block
+  until : UNTIL puntUntilJump hyper_exp IS bool_values_cycle puntUntil DO built_block puntUntilEnd
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -429,7 +434,7 @@ def p_until(p):
 # Condition
 def p_condition(p):
   '''
-  condition : IF condition_exp built_block condition_A condition_B END
+  condition : IF condition_exp puntIF built_block condition_A condition_B END puntIfEnd
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -445,7 +450,7 @@ def p_condition_exp(p):
   p[0]
 def p_condition_A(p):
   '''
-  condition_A : ELSIF condition_exp built_block condition_A
+  condition_A : puntElseIfGOTO ELSIF condition_exp puntElseIfGoToF built_block puntElseIfEnd condition_A
               | empty
   '''
   p[0] = ""
@@ -454,7 +459,7 @@ def p_condition_A(p):
   p[0]
 def p_condition_B(p):
   '''
-  condition_B : ELSE built_block
+  condition_B : puntElse ELSE built_block
               | empty
   '''
   p[0] = ""
@@ -476,6 +481,7 @@ def p_lecture_A(p):
   '''
   global quadruples
   quadruples.append(Quad('lecture', "", "", str(p[1])))
+  contGlobal += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -504,7 +510,10 @@ def p_writing_A(p):
   '''
   global quadruples
   global variables
+  global contGlobal
   quadruples.append(Quad('Writing', "", "", str(variables.pop())))
+  contGlobal += 1
+
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -818,6 +827,19 @@ def p_bool_values(p):
               | FALSE
   '''
   p[0] = p[1]
+def p_bool_values_cycle(p):
+  '''
+  bool_values_cycle : TRUE
+                    | FALSE
+  '''
+  global quadruples
+  global contGlobal
+  global variables
+  quadruples.append(Quad('==', str(variables.pop()), p[1], "t"+str(contGlobal)))
+  variables.append("t"+str(contGlobal))
+  contGlobal += 1
+  p[0] = p[1]
+
 # Empty
 def p_empty(p):
   '''
@@ -939,6 +961,126 @@ def p_puntCP(p):
   global operators
   operators.pop()
   p[0] = p[1]
+
+def p_puntIF(p):
+  '''
+  puntIF : empty
+  '''
+  global quadruples
+  global variables
+  global contGlobal
+  global jumps
+  quadruples.append(Quad('GoToF',str(variables.pop()),'',''))
+  jumps.append(contGlobal)
+  contGlobal += 1
+  p[0] = p[1]
+
+def p_puntElse(p):
+  '''
+  puntElse : empty
+  '''
+  global quadruples
+  global variables
+  global contGlobal
+  global jumps
+  quadruples.append(Quad('GoTo','','',''))
+  false = jumps.pop()
+  jumps.append(contGlobal)
+  contGlobal += 1
+  quadruples[false].result = str(contGlobal)
+  p[0] = p[1]
+
+def p_puntIfEnd(p):
+  '''
+  puntIfEnd : empty
+  '''
+  global quadruples
+  global contGlobal
+  global jumps
+  end = jumps.pop()
+  quadruples[end].result = str(contGlobal)
+  p[0] = p[1]
+
+def p_puntElseIfGOTO(p):
+  '''
+  puntElseIfGOTO : empty
+  '''
+  global quadruples
+  global variables
+  global contGlobal
+  global jumps
+
+  returning = jumps.pop()
+  jumps.append(contGlobal)
+  quadruples.append(Quad('GoTo', '', '', '',))
+  contGlobal += 1
+  quadruples[returning].result = str(contGlobal-1)
+  contelsif = False
+
+  p[0] = p[1]
+
+def p_puntElseIfGoToF(p):
+  '''
+  puntElseIfGoToF : empty
+  '''
+  global quadruples
+  global variables
+  global contGlobal
+  global jumps
+  jumps.append(contGlobal)
+  quadruples.append(Quad('GoToF','',str(variables.pop()),''))
+  contGlobal += 1
+  
+  p[0] = p[1]
+
+def p_puntElseIfEnd(p):
+  '''
+  puntElseIfEnd : empty
+  '''
+  global jumps
+  global quadruples
+  returning = jumps.pop()
+  quadruples[returning].result = str(contGlobal)
+  p[0] = p[1]
+
+def p_puntUntilJump(p):
+  '''
+  puntUntilJump : empty
+  '''
+  global contGlobal
+  global jumps
+  jumps.append(contGlobal)
+  p[0] = p[1]
+
+def p_puntUntil(p):
+  '''
+  puntUntil : empty
+  '''
+  global quadruples
+  global contGlobal
+  global jumps
+  result = variables.pop()
+  quadruples.append(Quad('GoToF',str(result),'',''))
+  jumps.append(contGlobal)
+  contGlobal += 1
+  p[0] = p[1]
+
+def p_puntUntilEnd(p):
+  '''
+  puntUntilEnd : empty
+  '''
+  global quadruples
+  global contGlobal
+  global jumps
+  end = jumps.pop()
+  returning = jumps.pop()
+  quadruples.append(Quad('GOTO','','',str(returning)))
+  contGlobal += 1
+  quadruples[end].result = str(contGlobal)
+  p[0] = p[1]
+
+
+
   
 
 ################################################## Functions
@@ -975,5 +1117,8 @@ with open(name, 'r') as myfile:
 # print(scopeTable.scopes)
 # for scope in scopeTable.scopes.values():
 #   print(scope[1].vars)
+cont = 0
 for quad in quadruples:
-   quad.print()
+  print(str(cont) + " ", end = '')
+  quad.print()
+  cont += 1
