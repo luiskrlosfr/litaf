@@ -535,7 +535,7 @@ def p_class(p):
   p[0]
 def p_heritance(p):
   '''
-  heritance : FROM CLASS_ID
+  heritance : FROM getHeritance
             | empty
   '''
   p[0] = ""
@@ -859,6 +859,8 @@ def p_getClassId(p):
   '''
   getClassId : CLASS_ID
   '''
+  global currentClass
+  currentClass = p[1]
   create_scope(p[1], "class")
   p[0] = p[1]
 
@@ -872,6 +874,18 @@ def p_constructorClass(p):
   cuClass = currentClass + currentClass
   actualScope = cuClass
   create_scope(cuClass, currentClass)
+  p[0] = p[1]
+
+def p_getHeritance(p):
+  '''
+  getHeritance : CLASS_ID
+  '''
+  global scopeTable
+  global currentClass
+  if scopeTable.scopes[p[1]]:
+    scopeTable.scopes[currentClass][1].vars = scopeTable.scopes[p[1]][1].vars.copy()
+  else:
+    print("Clase padre '{}' no ha sido declarada").format(p[1])
   p[0] = p[1]
 # Set Main scope
 def p_setMain(p):
