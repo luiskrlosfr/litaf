@@ -13,7 +13,8 @@ operators = []
 types = []
 variables = []
 jumps = []
-
+ranges = []
+patrons = []
 # Start
 def p_start(p):
   '''
@@ -393,24 +394,58 @@ def p_cycle_A(p):
   cycle_A : loop
           | until
   '''
+    
   p[0] = p[1]
 def p_loop(p): # Loop Cycle structure
   '''
-  loop : LOOP FROM ID TO loop_value BY patron built_block
+  loop : LOOP FROM puntLoopID loop_to loop_value built_block BY patron
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+def p_loop_to(p):
+  '''
+  loop_to : UPTO puntLoopUp
+          | DOWNTO puntLoopDown
+  '''
+  p[0] = p[1] + p[2]
 def p_loop_value(p):
   '''
   loop_value : hyper_exp
   '''
+  global variables
+  global operators
+  global quadruples
+  global contGlobal
+  global jumps
+  up = variables.pop()
+  low = variables.pop()
+  quadruples.append(Quad(operators.pop(), low, up, "t"+str(contGlobal)))
+  variables.append("t"+str(contGlobal))
+  contGlobal += 1
+  quadruples.append(Quad('GoToF', variables.pop(), None, None))
+  jumps.append(contGlobal)
+  contGlobal += 1
   p[0] = p[1]
 def p_patron(p):
   '''
-  patron : patron_A loop_value
+  patron : patron_A hyper_exp
   '''
+  global patrons
+  global quadruples
+  global variables
+  global contGlobal
+  global ranges
+  quadruples.append(Quad(operators.pop(), ranges[-1], variables.pop(),  "t"+str(contGlobal)))
+  variables.append("t"+str(contGlobal))
+  contGlobal += 1
+  quadruples.append(Quad('=', variables.pop(), None, ranges.pop()))
+  contGlobal += 1
+  returning = jumps.pop()
+  quadruples.append(Quad('GoTo', None, None, returning))
+  contGlobal += 1
+  quadruples[returning].result = contGlobal
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -422,6 +457,8 @@ def p_patron_A(p):
            | MULTIPLY
            | DIVIDE
   '''
+  global operators
+  operators.append(p[1])
   p[0] = p[1]
 def p_until(p):
   '''
@@ -480,6 +517,7 @@ def p_lecture_A(p):
   lecture_A : ID lecture_A1
   '''
   global quadruples
+  global contGlobal
   quadruples.append(Quad('lecture', "", "", str(p[1])))
   contGlobal += 1
   p[0] = ""
@@ -779,7 +817,9 @@ def p_list_reverse(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-############################### General Real Value Grammars (These are used or called by many different grammar rules)
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#                           General Real Value Grammars (These are used or called by many different grammar rules)
+#-------------------------------------------------------------------------------------------------------------------------------------------
 # Block for Condition and Cycles
 def p_built_block(p):
   '''
@@ -839,19 +879,18 @@ def p_bool_values_cycle(p):
   variables.append("t"+str(contGlobal))
   contGlobal += 1
   p[0] = p[1]
-
 # Empty
 def p_empty(p):
   '''
   empty : 
   '''
   p[0] = ""
-
 # Simple Error
 def p_error(p):
-  print("Error en la gramática")
-
-############################################### Puntos Neuralgicos
+  print("Grammar error, line {}".format(p.lexer.lineno))
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#                                                             Puntos Neuralgicos
+#-------------------------------------------------------------------------------------------------------------------------------------------
 # Create Global Scope
 def p_createGlobal(p):
   '''
@@ -1072,18 +1111,48 @@ def p_puntUntilEnd(p):
   global quadruples
   global contGlobal
   global jumps
-  end = jumps.pop()
-  returning = jumps.pop()
-  quadruples.append(Quad('GOTO','','',str(returning)))
+  end = jumps.pop()                           # Pops GOTOF QUAD and fills the missing jump with actual counter quadruple
   contGlobal += 1
   quadruples[end].result = str(contGlobal)
+  returning = jumps.pop()                     # Pops QUAD for generating GOTO QUAD to re evaluation of the conditional exp of the cycle
+  quadruples.append(Quad('GOTO','','',str(returning)))
   p[0] = p[1]
 
+def p_puntLoopFalseBottom(p):
+  '''
+  puntLoopFalseBottom : empty
+  '''
+  ranges.append('(')
+  p[0] = p[1]
 
+def p_puntLoopID(p):
+  '''
+  puntLoopID :  ID
+  '''
+  global variables
+  global ranges
+  variables.append(p[1])
+  ranges.append(p[1])
+  p[0] = p[1]
 
-  
+def p_puntLoopUp(p):
+  '''
+  puntLoopUp : empty
+  '''
+  global operators
+  operators.append('<=')
+  p[0] = p[1]
 
-################################################## Functions
+def p_puntLoopDown(p):
+  '''
+  puntLoopDown : empty
+  '''
+  global operators
+  operators.append('>=')
+  p[0] = p[1]
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#                                                                 Functions
+#-------------------------------------------------------------------------------------------------------------------------------------------
 # Function for inserting variable in scope table
 def insert_var(var, typ):
   global actualScope
@@ -1098,7 +1167,7 @@ def create_scope(scope, typ):
   global actualScope
   actualScope = scope
   if actualScope in scopeTable.scopes:
-    print("Error: Función '{}' ya existe").format(actualScope)
+    print("Error: Función '{}' ya existe".format(actualScope))
   else:
     scopeTable.push(scope, typ, VarTable())
 
