@@ -1110,8 +1110,7 @@ def p_punt_function_call_end(p):
   '''
   global quadruples
   global contGlobal
-  global funcName
-  quadruples.append(Quad('gosub','funcName','',''))
+  quadruples.append(Quad('gosub',funcName,'',''))
   contGlobal += 1
 
 ################################################## Functions
@@ -1120,7 +1119,7 @@ def insert_var(var, typ):
   global actualScope
   global scopeTable
   if var in scopeTable.scopes[actualScope][1].vars:
-    print("Error: Variable '{}' ya definida").format(var)
+    print("Error: Variable '{}' ya definida".format(var))
   else:
     scopeTable.scopes[actualScope][1].push(var, typ)
 # Function for setting actual scope
@@ -1129,7 +1128,7 @@ def create_scope(scope, typ):
   global actualScope
   actualScope = scope
   if actualScope in scopeTable.scopes:
-    print("Error: Función '{}' ya existe").format(actualScope)
+    print("Error: Función '{}' ya existe".format(actualScope))
   else:
     scopeTable.push(scope, typ, VarTable())
 
