@@ -8,14 +8,17 @@ scopeTable = ScopeTable()
 actualScope = 'global'
 actualType = 'void'
 funcName = ''
-contGlobal = 0
+quadCont = 0
 contParams = 0
+tempCont = 0
 quadruples = []
 operators = []
 types = []
 variables = []
 jumps = []
-
+ranges = []
+conditions = []
+patrons = []
 # Start
 def p_start(p):
   '''
@@ -117,9 +120,9 @@ def p_assign(p):
   global operators
   global quadruples
   global variables
-  global contGlobal
+  global quadCont
   quadruples.append(Quad(operators.pop(), "", str(variables.pop()), p[1]))
-  contGlobal += 1
+  quadCont += 1
 
   p[0] = ""
   for x in range(1, len(p)):
@@ -229,21 +232,23 @@ def p_function_call_name(p):
   '''
   global quadruples
   global funcName
+  global quadCont
   funcName = p[1]
   quadruples.append(Quad('era',funcName,'',''))
+  quadCont += 1
   p[0] = p[1]
 # Statement
 def p_function_call_hyper_exp(p):
   '''
   function_call_hyper_exp : hyper_exp
   '''
-  global contGlobal
+  global quadCont
   global contParams
   global quadruples
   global variables
   contParams += 1
   quadruples.append(Quad('param',variables.pop(),'','param'+str(contParams)))
-  contGlobal += 1
+  quadCont += 1
   p[0] = p[1]
 def p_statement(p):
   '''
@@ -417,25 +422,66 @@ def p_cycle_A(p):
   cycle_A : loop
           | until
   '''
+    
   p[0] = p[1]
 def p_loop(p): # Loop Cycle structure
   '''
-  loop : LOOP FROM ID TO loop_value BY patron built_block
+  loop : LOOP FROM puntLoopID loop_to loop_value built_block BY patron
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+def p_loop_to(p):
+  '''
+  loop_to : UPTO puntLoopUp
+          | DOWNTO puntLoopDown
+  '''
+  p[0] = p[1] + p[2]
 def p_loop_value(p):
   '''
   loop_value : hyper_exp
   '''
+  global variables
+  global conditions
+  global quadruples
+  global quadCont
+  global jumps
+  global ranges
+  global tempCont
+  up = variables.pop()
+  low = ranges[-1]
+  quadruples.append(Quad(conditions.pop(), up, low, "t"+str(tempCont)))
+  variables.append("t"+str(tempCont))
+  jumps.append(quadCont)
+  tempCont += 1
+  quadCont += 1
+  jumps.append(quadCont)
+  quadruples.append(Quad('GoToF', variables.pop(), None, None))
+  quadCont += 1
   p[0] = p[1]
 
 def p_patron(p):
   '''
-  patron : patron_A loop_value
+  patron : patron_A hyper_exp
   '''
+  global quadruples
+  global variables
+  global quadCont
+  global ranges
+  global patrons
+  global tempCont
+  quadruples.append(Quad(patrons.pop(), variables.pop(), ranges[-1],  "t"+str(tempCont)))
+  variables.append("t"+str(tempCont))
+  tempCont += 1
+  quadCont += 1
+  quadruples.append(Quad('=', None, variables.pop(), ranges.pop()))
+  quadCont += 1
+  returning = jumps.pop()
+  goto = jumps.pop()
+  quadruples.append(Quad('GoTo', None, None, goto))
+  quadCont += 1
+  quadruples[returning].result = quadCont
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -447,6 +493,8 @@ def p_patron_A(p):
            | MULTIPLY
            | DIVIDE
   '''
+  global patrons
+  patrons.append(p[1])
   p[0] = p[1]
 def p_until(p):
   '''
@@ -505,8 +553,9 @@ def p_lecture_A(p):
   lecture_A : ID lecture_A1
   '''
   global quadruples
+  global quadCont
   quadruples.append(Quad('lecture', "", "", str(p[1])))
-  contGlobal += 1
+  quadCont += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -535,9 +584,9 @@ def p_writing_A(p):
   '''
   global quadruples
   global variables
-  global contGlobal
+  global quadCont
   quadruples.append(Quad('Writing', "", "", str(variables.pop())))
-  contGlobal += 1
+  quadCont += 1
 
   p[0] = ""
   for x in range(1, len(p)):
@@ -804,7 +853,9 @@ def p_list_reverse(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-############################### General Real Value Grammars (These are used or called by many different grammar rules)
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#                           General Real Value Grammars (These are used or called by many different grammar rules)
+#-------------------------------------------------------------------------------------------------------------------------------------------
 # Block for Condition and Cycles
 def p_built_block(p):
   '''
@@ -858,25 +909,26 @@ def p_bool_values_cycle(p):
                     | FALSE
   '''
   global quadruples
-  global contGlobal
+  global quadCont
   global variables
-  quadruples.append(Quad('==', str(variables.pop()), p[1], "t"+str(contGlobal)))
-  variables.append("t"+str(contGlobal))
-  contGlobal += 1
+  global tempCont
+  quadruples.append(Quad('==', str(variables.pop()), p[1], "t"+str(tempCont)))
+  variables.append("t"+str(tempCont))
+  tempCont += 1
+  quadCont += 1
   p[0] = p[1]
-
 # Empty
 def p_empty(p):
   '''
   empty : 
   '''
   p[0] = ""
-
 # Simple Error
 def p_error(p):
-  print("Error en la gramática")
-
-############################################### Puntos Neuralgicos
+  print("Grammar error, line {}".format(p.lexer.lineno))
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#                                                             Puntos Neuralgicos
+#-------------------------------------------------------------------------------------------------------------------------------------------
 # Create Global Scope
 def p_createGlobal(p):
   '''
@@ -913,13 +965,15 @@ def p_puntSum(p):
   '''
   global operators
   global quadruples
-  global contGlobal
+  global quadCont
   global variables
+  global tempCont
   if len(operators) > 0:
     if operators[-1] == '+' or operators[-1] == '-':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
-      variables.append("t"+str(contGlobal))
-      contGlobal += 1
+      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(tempCont)))
+      variables.append("t"+str(tempCont))
+      tempCont += 1
+      quadCont += 1
   p[0] = p[1]
   
 def p_puntMul(p):
@@ -928,13 +982,15 @@ def p_puntMul(p):
   '''
   global operators
   global quadruples
-  global contGlobal
+  global quadCont
   global variables
+  global tempCont
   if len(operators) > 0:
     if operators[-1] == '*' or operators[-1] == '/':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
-      variables.append("t"+str(contGlobal))
-      contGlobal += 1
+      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(tempCont)))
+      variables.append("t"+str(tempCont))
+      tempCont += 1
+      quadCont += 1
   p[0] = p[1]
 
 def p_appendEqual(p):
@@ -951,26 +1007,30 @@ def p_puntLogical(p):
   '''
   global operators
   global quadruples
-  global contGlobal
+  global quadCont
   global variables
+  global tempCont
   if len(operators) > 0:
     if operators[-1] == '>' or operators[-1] == '<' or operators[-1] == '>=' or operators[-1] == '<=' or operators[-1] == '==' or operators[-1] == '!=':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
-      variables.append("t"+str(contGlobal))
-      contGlobal += 1
+      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(tempCont)))
+      variables.append("t"+str(tempCont))
+      tempCont += 1
+      quadCont += 1
 def p_puntAndOr(p):
   '''
   puntAndOr : empty
   '''
   global operators
   global quadruples
-  global contGlobal
+  global quadCont
   global variables
+  global tempCont
   if len(operators) > 0:
     if operators[-1] == '||' or operators[-1] == '&&':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
-      variables.append("t"+str(contGlobal))
-      contGlobal += 1
+      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(tempCont)))
+      variables.append("t"+str(tempCont))
+      tempCont += 1
+      quadCont += 1
 def p_puntOP(p):
   '''
   puntOP : empty
@@ -993,11 +1053,11 @@ def p_puntIF(p):
   '''
   global quadruples
   global variables
-  global contGlobal
+  global quadCont
   global jumps
   quadruples.append(Quad('GoToF',str(variables.pop()),'',''))
-  jumps.append(contGlobal)
-  contGlobal += 1
+  jumps.append(quadCont)
+  quadCont += 1
   p[0] = p[1]
 
 def p_puntElse(p):
@@ -1006,13 +1066,13 @@ def p_puntElse(p):
   '''
   global quadruples
   global variables
-  global contGlobal
+  global quadCont
   global jumps
   quadruples.append(Quad('GoTo','','',''))
   false = jumps.pop()
-  jumps.append(contGlobal)
-  contGlobal += 1
-  quadruples[false].result = str(contGlobal)
+  jumps.append(quadCont)
+  quadCont += 1
+  quadruples[false].result = str(quadCont)
   p[0] = p[1]
 
 def p_puntIfEnd(p):
@@ -1020,10 +1080,10 @@ def p_puntIfEnd(p):
   puntIfEnd : empty
   '''
   global quadruples
-  global contGlobal
+  global quadCont
   global jumps
   end = jumps.pop()
-  quadruples[end].result = str(contGlobal)
+  quadruples[end].result = str(quadCont)
   p[0] = p[1]
 
 def p_puntElseIfGOTO(p):
@@ -1032,16 +1092,13 @@ def p_puntElseIfGOTO(p):
   '''
   global quadruples
   global variables
-  global contGlobal
+  global quadCont
   global jumps
-
   returning = jumps.pop()
-  jumps.append(contGlobal)
+  jumps.append(quadCont)
   quadruples.append(Quad('GoTo', '', '', '',))
-  contGlobal += 1
-  quadruples[returning].result = str(contGlobal-1)
-  contelsif = False
-
+  quadCont += 1
+  quadruples[returning].result = str(quadCont-1)
   p[0] = p[1]
 
 def p_puntElseIfGoToF(p):
@@ -1050,11 +1107,11 @@ def p_puntElseIfGoToF(p):
   '''
   global quadruples
   global variables
-  global contGlobal
+  global quadCont
   global jumps
-  jumps.append(contGlobal)
+  jumps.append(quadCont)
   quadruples.append(Quad('GoToF','',str(variables.pop()),''))
-  contGlobal += 1
+  quadCont += 1
   
   p[0] = p[1]
 
@@ -1065,16 +1122,16 @@ def p_puntElseIfEnd(p):
   global jumps
   global quadruples
   returning = jumps.pop()
-  quadruples[returning].result = str(contGlobal)
+  quadruples[returning].result = str(quadCont)
   p[0] = p[1]
 
 def p_puntUntilJump(p):
   '''
   puntUntilJump : empty
   '''
-  global contGlobal
+  global quadCont
   global jumps
-  jumps.append(contGlobal)
+  jumps.append(quadCont)
   p[0] = p[1]
 
 def p_puntUntil(p):
@@ -1082,12 +1139,12 @@ def p_puntUntil(p):
   puntUntil : empty
   '''
   global quadruples
-  global contGlobal
+  global quadCont
   global jumps
   result = variables.pop()
   quadruples.append(Quad('GoToF',str(result),'',''))
-  jumps.append(contGlobal)
-  contGlobal += 1
+  jumps.append(quadCont)
+  quadCont += 1
   p[0] = p[1]
 
 def p_puntUntilEnd(p):
@@ -1095,26 +1152,52 @@ def p_puntUntilEnd(p):
   puntUntilEnd : empty
   '''
   global quadruples
-  global contGlobal
+  global quadCont
   global jumps
-  end = jumps.pop()
-  returning = jumps.pop()
+  end = jumps.pop()                           # Pops GOTOF QUAD and fills the missing jump with actual counter quadruple
+  quadCont += 1
+  quadruples[end].result = str(quadCont)
+  returning = jumps.pop()                     # Pops QUAD for generating GOTO QUAD to re evaluation of the conditional exp of the cycle
   quadruples.append(Quad('GOTO','','',str(returning)))
-  contGlobal += 1
-  quadruples[end].result = str(contGlobal)
+  p[0] = p[1]
+def p_puntLoopID(p):
+  '''
+  puntLoopID :  ID
+  '''
+  global variables
+  global ranges
+  global operators
+  variables.append(p[1])
+  ranges.append(p[1])
   p[0] = p[1]
 
+def p_puntLoopUp(p):
+  '''
+  puntLoopUp : empty
+  '''
+  global conditions
+  conditions.append('<=')
+  p[0] = p[1]
 def p_punt_function_call_end(p):
   '''
   punt_function_call_end : empty
   '''
   global quadruples
-  global contGlobal
+  global quadCont
   global funcName
-  quadruples.append(Quad('gosub','funcName','',''))
-  contGlobal += 1
-
-################################################## Functions
+  quadruples.append(Quad('gosub',funcName,None,None))
+  quadCont += 1
+  p[0] = p[1]
+def p_puntLoopDown(p):
+  '''
+  puntLoopDown : empty
+  '''
+  global conditions
+  conditions.append('>=')
+  p[0] = p[1]
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#                                                                 Functions
+#-------------------------------------------------------------------------------------------------------------------------------------------
 # Function for inserting variable in scope table
 def insert_var(var, typ):
   global actualScope
@@ -1129,7 +1212,7 @@ def create_scope(scope, typ):
   global actualScope
   actualScope = scope
   if actualScope in scopeTable.scopes:
-    print("Error: Función '{}' ya existe").format(actualScope)
+    print("Error: Función '{}' ya existe".format(actualScope))
   else:
     scopeTable.push(scope, typ, VarTable())
 
@@ -1153,4 +1236,3 @@ for quad in quadruples:
   print(str(cont) + " ", end = '')
   quad.print()
   cont += 1
-print(variables)
