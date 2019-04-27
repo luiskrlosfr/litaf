@@ -68,6 +68,8 @@ reserved = {
   'loop'       : 'LOOP',
   'from'       : 'FROM',
   'to'         : 'TO',
+  'upto'       : 'UPTO',
+  'downto'     :  'DOWNTO',
   'by'         : 'BY',
   'until'      : 'UNTIL',
   'do'         : 'DO',

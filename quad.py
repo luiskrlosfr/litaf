@@ -6,7 +6,7 @@ class Quad:
     self.result = result
 
   def print(self):
-    print("Quad: " + self.operator + ", " + self.op1 + ", " + self.op2 + ", " + self.result)
+    print("Quad: " + str(self.operator) + ", " + str(self.op1) + ", " + str(self.op2) + ", " + str(self.result))
   
     
 
