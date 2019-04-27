@@ -7,7 +7,9 @@ from collections import deque
 scopeTable = ScopeTable()
 actualScope = 'global'
 actualType = 'void'
+funcName = ''
 contGlobal = 0
+contParams = 0
 quadruples = []
 operators = []
 types = []
@@ -196,7 +198,7 @@ def p_function_D(p): # Return value for function
 # Function Call
 def p_function_call(p):
   '''
-  function_call : FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+  function_call : function_call_name OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -204,7 +206,7 @@ def p_function_call(p):
   p[0]
 def p_function_call_A(p): # Parameters for function call
   '''
-  function_call_A : hyper_exp function_call_A1
+  function_call_A : function_call_hyper_exp function_call_A1 punt_function_call_end
                   | empty
   '''
   p[0] = ""
@@ -213,14 +215,36 @@ def p_function_call_A(p): # Parameters for function call
   p[0]
 def p_function_call_A1(p):
   '''
-  function_call_A1 : COMMA hyper_exp function_call_A1
+  function_call_A1 : COMMA function_call_hyper_exp function_call_A1
                    | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
+def p_function_call_name(p):
+  '''
+  function_call_name : FUNCTION_ID
+  '''
+  global quadruples
+  global funcName
+  funcName = p[1]
+  quadruples.append(Quad('era',funcName,'',''))
+  p[0] = p[1]
 # Statement
+def p_function_call_hyper_exp(p):
+  '''
+  function_call_hyper_exp : hyper_exp
+  '''
+  global contGlobal
+  global contParams
+  global quadruples
+  global variables
+  contParams += 1
+  quadruples.append(Quad('param',variables.pop(),'','param'+str(contParams)))
+  contGlobal += 1
+  p[0] = p[1]
 def p_statement(p):
   '''
   statement : declarations
@@ -407,6 +431,7 @@ def p_loop_value(p):
   loop_value : hyper_exp
   '''
   p[0] = p[1]
+
 def p_patron(p):
   '''
   patron : patron_A loop_value
@@ -1079,9 +1104,15 @@ def p_puntUntilEnd(p):
   quadruples[end].result = str(contGlobal)
   p[0] = p[1]
 
-
-
-  
+def p_punt_function_call_end(p):
+  '''
+  punt_function_call_end : empty
+  '''
+  global quadruples
+  global contGlobal
+  global funcName
+  quadruples.append(Quad('gosub','funcName','',''))
+  contGlobal += 1
 
 ################################################## Functions
 # Function for inserting variable in scope table
@@ -1122,3 +1153,4 @@ for quad in quadruples:
   print(str(cont) + " ", end = '')
   quad.print()
   cont += 1
+print(variables)
