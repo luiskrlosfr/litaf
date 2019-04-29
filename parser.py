@@ -5,7 +5,7 @@ from nerve_points import *
 # Start
 def p_start(p):
   '''
-  start : LITAF START DOUBLE_DOT classes global_vars functions main END
+  start : punt_start_litaf LITAF START DOUBLE_DOT classes global_vars functions main END
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -56,7 +56,7 @@ def p_declarations(p):
 # Main
 def p_main(p):
   '''
-  main : MAIN setMain IS INT main_A WITH INT_CONST END
+  main : punt_Go_main MAIN setMain IS INT main_A WITH INT_CONST END
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -109,6 +109,15 @@ def p_assign_A(p):
   p[0] = p[1]
 
 # Function
+def p_function(p):
+  '''
+  function : FUN getFunId OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS function_type function_C function_D END 
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+
 def p_function_C(p): # Statements inside function
   '''
   function_C : statement function_C
@@ -118,15 +127,7 @@ def p_function_C(p): # Statements inside function
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_function_D(p): # Return value for function
-  '''
-  function_D : WITH hyper_exp
-             | empty
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+
 # Function Call
 def p_function_call(p):
   '''

@@ -18,10 +18,31 @@ jumps = []
 ranges = []
 conditions = []
 patrons = []
+funcType = ''
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                        Syntax Rules with Nerve Points
 #-------------------------------------------------------------------------------------------------------------------------------------------
 # Declaration
+
+def p_punt_start_litaf(p):
+  '''
+  punt_start_litaf : empty
+  '''
+  global quadCont
+  global quadruples
+  quadruples.append(Quad('GoTo',None,None,None))
+  quadCont += 1
+  p[0] = p[1]
+
+def p_punt_Go_main(p):
+  '''
+  punt_Go_main : empty
+  '''
+  global quadCont
+  global quadruples
+  quadruples[0].result = quadCont
+  p[0] = p[1]
+
 def p_declaration_A(p):
   '''
   declaration_A : ID declaration_A1
@@ -48,16 +69,6 @@ def p_assign(p):
   p[0]
 
 # Function
-def p_function(p):
-  '''
-  function : FUN getFunId OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS function_B function_C function_D END
-  '''
-  global actualScope
-  scopeTable.scopes[actualScope][0] = p[7]
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
 def p_function_A(p): # Parameters for declaring functions
   '''
   function_A : type ID function_A1
@@ -89,9 +100,43 @@ def p_function_B(p): # Type of return value (includes void)
   function_B : type
              | VOID
   '''
-  global actualType
-  actualType = p[1]
+  global actualScope
+  global scopeTable
+  scopeTable.scopes[actualScope][0] = p[1]
   p[0] = p[1]
+
+def p_function_type(p):
+  '''
+  function_type : type
+                | VOID  
+  '''
+  global funcType
+  funcType = p[1]
+  p[0] = p[1]
+
+def p_function_D(p): # Return value for function
+  '''
+  function_D : WITH hyper_exp
+             | empty
+  '''
+  global actualScope
+  global scopeTable
+  global quadruples
+  global quadCont
+  global funcType
+  print(actualScope)
+  print(funcType)
+  if funcType != 'void':
+    quadruples.append(Quad('return',None,None,str(variables.pop())))
+  else:
+    quadruples.append(Quad('return',None,None,None))
+  quadCont += 1
+  quadruples.append(Quad('EndProc',None,None,None))
+  quadCont += 1
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 
 # Function Call
 def p_function_call_name(p):
@@ -573,3 +618,4 @@ def create_scope(scope, typ):
     print("Error: Función '{}' ya existe".format(actualScope))
   else:
     scopeTable.push(scope, typ, VarTable())
+print(scopeTable.scopes)
