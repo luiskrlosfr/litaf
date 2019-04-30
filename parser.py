@@ -88,6 +88,7 @@ def p_declaration(p):
   '''
   declaration : function_B declaration_A
   '''
+  global actualScope
   p[0] = p[1] + p[2]
 def p_declaration_A1(p):
   '''
@@ -731,4 +732,3 @@ for quad in quadruples:
   print(str(cont) + " ", end = '')
   quad.print()
   cont += 1
-

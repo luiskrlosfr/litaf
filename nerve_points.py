@@ -3,6 +3,7 @@ from quad import Quad
 from vartable import VarTable, ScopeTable
 from lexer import tokens
 from collections import deque
+from semcube import Semcube
 scopeTable = ScopeTable()
 actualScope = 'global'
 actualType = 'void'
@@ -20,7 +21,7 @@ ranges = []
 conditions = []
 patrons = []
 funcType = ''
-
+cube = Semcube()
 #---------------------------Variables MEMORIAS-------------------------------
 loc_int = 100000
 loc_flo = 102000
@@ -50,8 +51,7 @@ con_cha = 306000
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                        Syntax Rules with Nerve Points
 #-------------------------------------------------------------------------------------------------------------------------------------------
-# Declaration
-
+# Start of Program
 def p_punt_start_litaf(p):
   '''
   punt_start_litaf : empty
@@ -73,12 +73,14 @@ def p_punt_Go_main(p):
   quadruples[0].result = quadCont
   p[0] = p[1]
 
+# Declaration
 def p_declaration_A(p):
   '''
   declaration_A : ID declaration_A1
   '''
   global actualType
-  insert_var(p[1], actualType)
+  global actualScope
+  insert_var(p[1], actualType, actualScope)
   p[0] = p[1] + p[2]
 
 # Assign
@@ -90,9 +92,15 @@ def p_assign(p):
   global quadruples
   global variables
   global quadCont
-  quadruples.append(Quad(operators.pop(), "", str(variables.pop()), p[1]))
-  quadCont += 1
-
+  operator = operators.pop()
+  operand2 = variables.pop()
+  operand1 = scopeTable.scopes[actualScope][1].vars[p[1]][1]
+  result = valid_operation(operator, operand1, operand2)
+  if result == -1:
+    print("Error: Operación inválida")
+  else:
+    quadruples.append(Quad(operator, None, operand2, operand1))
+    quadCont += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -107,12 +115,12 @@ def p_function_A(p): # Parameters for declaring functions
   global actualScope
   global scopeTable
   if len(p) > 2:
-    insert_var(p[2], p[1])
+    insert_var(p[2], p[1], actualScope)
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_function_A1(p):
+def p_function_A1(p): # Call for multiple parameters
   '''
   function_A1 : COMMA type ID function_A1
               | empty
@@ -120,7 +128,7 @@ def p_function_A1(p):
   if len(p) > 2:
     global actualScope
     global scopeTable
-    insert_var(p[3], p[2])
+    insert_var(p[3], p[2], actualScope)
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -134,7 +142,8 @@ def p_function_B(p): # Type of return value (includes void)
   global scopeTable
   global actualType
   actualType = p[1]
-  scopeTable.scopes[actualScope][0] = p[1]
+  if actualScope != 'global' or actualScope != 'constants':
+    scopeTable.scopes[actualScope][0] = p[1]
   p[0] = p[1]
 
 def p_function_type(p):
@@ -367,59 +376,31 @@ def p_int_const(p):
   '''
   int_const : INT_CONST
   '''
-  global scopeTable
-  global glo_int
-  global actual_value
   if not check_if_exist(p[1]):
-    dir = glo_int
-    glo_int += 1
-  else:
-    dir = actual_value
-  scopeTable.scopes['constants'][1].push(p[1], 'int', dir)
+    insert_constant(p[1], 'int')
   p[0] = p[1]
 def p_char_const(p):
   '''
   char_const : CHAR_CONST
   '''
-  global scopeTable
-  global glo_cha
-  global actual_value
   if not check_if_exist(p[1]):
-    dir = glo_cha
-    glo_cha += 1
-  else:
-    dir = actual_value
-  scopeTable.scopes['constants'][1].push(p[1], 'cha', dir)
+    insert_constant(p[1], 'cha')
   p[0] = p[1]
 
 def p_float_const(p):
   '''
   float_const : FLOAT_CONST
   '''
-  global scopeTable
-  global glo_flo
-  global actual_value
   if not check_if_exist(p[1]):
-    dir = glo_flo
-    glo_flo += 1
-  else:
-    dir = actual_value
-  scopeTable.scopes['constants'][1].push(p[1], 'flo', dir)
+    insert_constant(p[1], 'flo')
   p[0] = p[1]
 
 def p_string_const(p):
   '''
   string_const : STRING_CONST
   '''
-  global scopeTable
-  global glo_str
-  global actual_value
   if not check_if_exist(p[1]):
-    dir = glo_str
-    glo_str += 1
-  else:
-    dir = actual_value
-  scopeTable.scopes['constants'][1].push(p[1], 'str', dir)
+    insert_constant(p[1], 'str')
   p[0] = p[1]
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -430,6 +411,9 @@ def p_createGlobal(p):
   '''
   createGlobal : empty
   '''
+  global scopeTable
+  global actualScope
+  actualScope = 'global'
   create_scope("global", "void")
   p[0] = p[1]
 
@@ -464,13 +448,18 @@ def p_puntSum(p):
   global quadruples
   global quadCont
   global variables
-  global tempCont
   if len(operators) > 0:
-    if operators[-1] == '+' or operators[-1] == '-': 
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(tempCont)))
-      variables.append("t"+str(tempCont))
-      tempCont += 1
-      quadCont += 1
+    if operators[-1] == '+' or operators[-1] == '-':
+      operator = operators.pop()
+      operand2 = variables.pop()
+      operand1 = variables.pop()
+      result = valid_operation(operator, operand1, operand2)
+      if result == -1:
+        print("Error: Operación inválida")
+      else:
+        quadruples.append(Quad(operator, operand2, operand1, result))
+        variables.append(result)
+        quadCont += 1
   p[0] = p[1]
   
 def p_puntMul(p):
@@ -484,10 +473,16 @@ def p_puntMul(p):
   global tempCont
   if len(operators) > 0:
     if operators[-1] == '*' or operators[-1] == '/':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(tempCont)))
-      variables.append("t"+str(tempCont))
-      tempCont += 1
-      quadCont += 1
+      operator = operators.pop()
+      operand2 = variables.pop()
+      operand1 = variables.pop()
+      result = valid_operation(operator, operand1, operand2)
+      if result == -1:
+        print("Error: Operación inválida")
+      else:
+        quadruples.append(Quad(operator, operand2, operand1, result))
+        variables.append(result)
+        quadCont += 1
   p[0] = p[1]
 
 def p_appendEqual(p):
@@ -509,10 +504,17 @@ def p_puntLogical(p):
   global tempCont
   if len(operators) > 0:
     if operators[-1] == '>' or operators[-1] == '<' or operators[-1] == '>=' or operators[-1] == '<=' or operators[-1] == '==' or operators[-1] == '!=':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(tempCont)))
-      variables.append("t"+str(tempCont))
-      tempCont += 1
-      quadCont += 1
+      operator = operators.pop()
+      operand2 = variables.pop()
+      operand1 = variables.pop()
+      result = valid_operation(operator, operand1, operand2)
+      if result == -1:
+        print("Error: Operación inválida")
+      else:
+        quadruples.append(Quad(operator, operand2, operand1, result))
+        variables.append(result)
+        quadCont += 1
+  p[0] = p[1]
 def p_puntAndOr(p):
   '''
   puntAndOr : empty
@@ -524,10 +526,17 @@ def p_puntAndOr(p):
   global tempCont
   if len(operators) > 0:
     if operators[-1] == '||' or operators[-1] == '&&':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(tempCont)))
-      variables.append("t"+str(tempCont))
-      tempCont += 1
-      quadCont += 1
+      operator = operators.pop()
+      operand2 = variables.pop()
+      operand1 = variables.pop()
+      result = valid_operation(operator, operand1, operand2)
+      if result == -1:
+        print("Error: Operación inválida")
+      else:
+        quadruples.append(Quad(operator, operand2, operand1, result))
+        variables.append(result)
+        quadCont += 1
+  p[0] = p[1]
 def p_puntOP(p):
   '''
   puntOP : empty
@@ -696,14 +705,18 @@ def p_puntLoopDown(p):
 #                                                                 Functions
 #-------------------------------------------------------------------------------------------------------------------------------------------
 # Function for inserting variable in scope table
-def insert_var(var, typ):
-  global actualScope
+def insert_var(var, typ, scope):
   global scopeTable
-  if var in scopeTable.scopes[actualScope][1].vars:
-    print("Error: Variable '{}' ya definida").format(var)
+  if var in scopeTable.scopes[scope][1].vars:
+    print("Error: Variable '{}' ya definida".format(var))
   else:
-    dir = calc_dir(typ)
-    scopeTable.scopes[actualScope][1].push(var, typ, dir)
+    dir = calc_dir(typ, scope)
+    scopeTable.scopes[scope][1].push(var, typ, dir)
+# Function for inserting constant in constants table
+def insert_constant(var, typ):
+  if var not in scopeTable.scopes['constants'][1].vars:
+    dir = calc_dir(typ, 'constants')
+    scopeTable.scopes['constants'][1].push(var, typ, dir)
 # Function for setting actual scope
 def create_scope(scope, typ):
   global scopeTable
@@ -732,10 +745,9 @@ def reset_locals():
   loc_tem_str = 114000
   loc_tem_cha = 116000 
 
-def calc_dir(typ):
-  global actualScope
+def calc_dir(typ, scope):
   dir = 0
-  if actualScope == 'global':
+  if scope == 'global':
     if typ == 'int':
       global glo_int
       dir = glo_int
@@ -756,7 +768,7 @@ def calc_dir(typ):
       global glo_boo
       dir = glo_boo
       glo_boo += 1
-  if actualScope == 'constants':
+  elif scope == 'constants':
     if typ == 'int':
       global con_int
       dir = con_int
@@ -815,4 +827,183 @@ def check_if_exist(var):
     return True
   else:
     return False
-print(scopeTable.scopes)
+
+# Check if operation is valid between operands
+def valid_operation(oper, op1, op2):
+  global cube
+  var1 = get_type_by_direction(op1)
+  var2 = get_type_by_direction(op2)
+  print(cube.cube[var1])
+  result = cube.cube[var1[oper[var2]]]
+  if result[0] == 'e' or result[0] == 'o':
+    return -1
+  else:
+    return calc_new_direction(result)
+
+# Get the new direction
+def calc_new_direction(type):
+  dir = 0
+  if type == 'int_local':
+    global loc_int
+    dir = loc_int
+    loc_int += 1
+  elif type == 'flo_local':
+    global loc_flo
+    dir = loc_flo
+    loc_flo += 1
+  elif type == 'str_local':
+    global loc_str
+    dir = loc_str
+    loc_str += 1
+  elif type == 'cha_local':
+    global loc_cha
+    dir = loc_cha
+    loc_cha += 1
+  elif type == 'boo_local':
+    global loc_boo
+    dir = loc_boo
+    loc_boo += 1
+  elif type == 'int_local_temp':
+    global loc_tem_int
+    dir = loc_tem_int
+    loc_tem_int += 1
+  elif type == 'flo_local_temp':
+    global loc_tem_flo
+    dir = loc_tem_flo
+    loc_tem_flo += 1
+  elif type == 'str_local_temp':
+    global loc_tem_str
+    dir = loc_tem_str
+    loc_tem_str += 1
+  elif type == 'cha_local_temp':
+    global loc_tem_cha
+    dir = loc_tem_cha
+    loc_tem_cha += 1
+  elif type == 'boo_local_temp':
+    global loc_tem_boo
+    dir = loc_tem_boo
+    loc_tem_boo += 1
+  elif type == 'int_global':
+    global glo_int
+    dir = glo_int
+    glo_int += 1
+  elif type == 'flo_global':
+    global glo_flo
+    dir = glo_flo
+    glo_flo += 1
+  elif type == 'str_global':
+    global glo_str
+    dir = glo_str
+    glo_str += 1
+  elif type == 'cha_global':
+    global glo_cha
+    dir = glo_cha
+    glo_cha += 1
+  elif type == 'boo_global':
+    global glo_boo
+    dir = glo_boo
+    glo_boo += 1
+  elif type == 'int_global_temp':
+    global glo_tem_int
+    dir = glo_tem_int
+    glo_tem_int += 1
+  elif type == 'flo_global_temp':
+    global glo_tem_flo
+    dir = glo_tem_flo
+    glo_tem_flo += 1
+  elif type == 'str_global_temp':
+    global glo_tem_str
+    dir = glo_tem_str
+    glo_tem_str += 1
+  elif type == 'cha_global_temp':
+    global glo_tem_cha
+    dir = glo_tem_cha
+    glo_tem_cha += 1
+  elif type == 'boo_global_temp':
+    global glo_tem_boo
+    dir = glo_tem_boo
+    glo_tem_boo += 1
+  elif type == 'int_constant':
+    global con_int
+    dir = con_int
+    con_int += 1
+  elif type == 'flo_constant':
+    global con_flo
+    dir = con_flo
+    con_flo += 1
+  elif type == 'str_constant':
+    global con_str
+    dir = con_str
+    con_str += 1
+  elif type == 'cha_constant':
+    global con_cha
+    dir = con_cha
+    con_cha += 1
+  elif type == 'boo_constant':
+    global con_boo
+    dir = con_boo
+    con_boo += 1
+  return dir
+  
+# Get the type of data using its direction
+def get_type_by_direction(dir):
+  if (dir >= 100000 and dir <= 101999):
+    return 'int_local'
+  elif (dir >= 110000 and dir <= 111999):
+    return 'int_local_temp'
+  elif (dir >= 200000 and dir <= 201999):
+    return 'int_global'
+  elif (dir >= 210000 and dir <= 211999):
+    return 'int_global_temp'
+  elif (dir >= 300000 and dir <= 301999):
+    return 'int_constant'
+  elif (dir >= 310000 and dir <= 311999):
+    return 'int_constant_temp'
+  elif (dir >= 102000 and dir <= 103999):
+    return 'flo_local'
+  elif (dir >= 112000 and dir <= 113999):
+    return 'flo_local_temp'
+  elif (dir >= 202000 and dir <= 203999):
+    return 'flo_global'
+  elif (dir >= 212000 and dir <= 213999):
+    return 'flo_global_temp'
+  elif (dir >= 302000 and dir <= 303999):
+    return 'flo_constant'
+  elif (dir >= 312000 and dir <= 313999):
+    return 'flo_constant_temp'
+  elif (dir >= 104000 and dir <= 105999):
+    return 'str_local'
+  elif (dir >= 114000 and dir <= 115999):
+    return 'str_local_temp'
+  elif (dir >= 204000 and dir <= 205999):
+    return 'str_global'
+  elif (dir >= 214000 and dir <= 215999):
+    return 'str_global_temp'
+  elif (dir >= 304000 and dir <= 305999):
+    return 'str_constant'
+  elif (dir >= 314000 and dir <= 315999):
+    return 'str_constant_temp'
+  elif (dir >= 106000 and dir <= 107999):
+    return 'cha_local'
+  elif (dir >= 116000 and dir <= 117999):
+    return 'cha_local_temp'
+  elif (dir >= 206000 and dir <= 207999):
+    return 'cha_global'
+  elif (dir >= 216000 and dir <= 217999):
+    return 'cha_global_temp'
+  elif (dir >= 306000 and dir <= 307999):
+    return 'cha_constant'
+  elif (dir >= 316000 and dir <= 317999):
+    return 'cha_constant_temp'
+  elif (dir >= 108000 and dir <= 109999):
+    return 'boo_local'
+  elif (dir >= 118000 and dir <= 119999):
+    return 'boo_local_temp'
+  elif (dir >= 208000 and dir <= 209999):
+    return 'boo_global'
+  elif (dir >= 218000 and dir <= 219999):
+    return 'boo_global_temp'
+  elif (dir >= 308000 and dir <= 309999):
+    return 'boo_constant'
+  elif (dir >= 318000 and dir <= 319999):
+    return 'boo_constant_temp'
