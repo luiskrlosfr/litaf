@@ -166,7 +166,7 @@ def p_function_D(p): # Return value for function
   global quadCont
   global funcType
   if funcType != 'void':
-    quadruples.append(Quad('return',None,None,str(variables.pop())))
+    quadruples.append(Quad('return',None,None,variables.pop()))
   else:
     quadruples.append(Quad('return',None,None,None))
   quadCont += 1
@@ -186,7 +186,7 @@ def p_function_call_name(p):
   global funcName
   global quadCont
   funcName = p[1]
-  quadruples.append(Quad('era',funcName,'',''))
+  quadruples.append(Quad('era',funcName,None,None))
   quadCont += 1
   p[0] = p[1]
 def p_function_call_hyper_exp(p):
@@ -274,17 +274,21 @@ def p_loop_value(p):
   global quadCont
   global jumps
   global ranges
-  global tempCont
   up = variables.pop()
   low = ranges[-1]
-  quadruples.append(Quad(conditions.pop(), up, low, "t"+str(tempCont)))
-  variables.append("t"+str(tempCont))
-  jumps.append(quadCont)
-  tempCont += 1
-  quadCont += 1
-  jumps.append(quadCont)
-  quadruples.append(Quad('GoToF', variables.pop(), None, None))
-  quadCont += 1
+  operator = conditions.pop()
+  result = valid_operation(operator, low, up)
+  if result == -1:
+    print("Error: Operación inválida")
+  else:
+    quadruples.append(Quad(operator, up, low, result))
+    quadCont += 1
+    variables.append(result)
+    jumps.append(quadCont)
+    quadCont += 1
+    jumps.append(quadCont)
+    quadruples.append(Quad('GoToF', variables.pop(), None, None))
+    quadCont += 1
   p[0] = p[1]
 def p_patron(p):
   '''
@@ -296,17 +300,23 @@ def p_patron(p):
   global ranges
   global patrons
   global tempCont
-  quadruples.append(Quad(patrons.pop(), variables.pop(), ranges[-1],  "t"+str(tempCont)))
-  variables.append("t"+str(tempCont))
-  tempCont += 1
-  quadCont += 1
-  quadruples.append(Quad('=', None, variables.pop(), ranges.pop()))
-  quadCont += 1
-  returning = jumps.pop()
-  goto = jumps.pop()
-  quadruples.append(Quad('GoTo', None, None, goto))
-  quadCont += 1
-  quadruples[returning].result = quadCont
+  up = variables.pop()
+  low = ranges[-1]
+  operator = patrons.pop()
+  result = valid_operation(operator, low, up)
+  if result == -1:
+    print("Error: Operación inválida")
+  else:
+    quadruples.append(Quad(operator, up, low, result))
+    variables.append(result)
+    quadCont += 1
+    quadruples.append(Quad('=', None, variables.pop(), ranges.pop()))
+    quadCont += 1
+    returning = jumps.pop()
+    goto = jumps.pop()
+    quadruples.append(Quad('GoTo', None, None, goto))
+    quadCont += 1
+    quadruples[returning].result = quadCont
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -647,8 +657,9 @@ def p_puntUntil(p):
   global quadruples
   global quadCont
   global jumps
+  print(variables)
   result = variables.pop()
-  quadruples.append(Quad('GoToF',str(result),'',''))
+  quadruples.append(Quad('GoToF',str(result),None,None))
   jumps.append(quadCont)
   quadCont += 1
   p[0] = p[1]
@@ -673,8 +684,13 @@ def p_puntLoopID(p):
   global variables
   global ranges
   global operators
-  variables.append(p[1])
-  ranges.append(p[1])
+  global scopeTable
+  global actualScope
+  if check_if_exist(p[1]):
+    variables.append(actual_value)
+    ranges.append(actual_value)
+  else:
+    print("Error: variable '{}' sin definir".format(p[1]))
   p[0] = p[1]
 
 def p_puntLoopUp(p):
@@ -833,8 +849,7 @@ def valid_operation(oper, op1, op2):
   global cube
   var1 = get_type_by_direction(op1)
   var2 = get_type_by_direction(op2)
-  print(cube.cube[var1])
-  result = cube.cube[var1[oper[var2]]]
+  result = cube.cube[var1][oper][var2]
   if result[0] == 'e' or result[0] == 'o':
     return -1
   else:
@@ -842,168 +857,61 @@ def valid_operation(oper, op1, op2):
 
 # Get the new direction
 def calc_new_direction(type):
+  global actualScope
   dir = 0
-  if type == 'int_local':
-    global loc_int
-    dir = loc_int
-    loc_int += 1
-  elif type == 'flo_local':
-    global loc_flo
-    dir = loc_flo
-    loc_flo += 1
-  elif type == 'str_local':
-    global loc_str
-    dir = loc_str
-    loc_str += 1
-  elif type == 'cha_local':
-    global loc_cha
-    dir = loc_cha
-    loc_cha += 1
-  elif type == 'boo_local':
-    global loc_boo
-    dir = loc_boo
-    loc_boo += 1
-  elif type == 'int_local_temp':
-    global loc_tem_int
-    dir = loc_tem_int
-    loc_tem_int += 1
-  elif type == 'flo_local_temp':
-    global loc_tem_flo
-    dir = loc_tem_flo
-    loc_tem_flo += 1
-  elif type == 'str_local_temp':
-    global loc_tem_str
-    dir = loc_tem_str
-    loc_tem_str += 1
-  elif type == 'cha_local_temp':
-    global loc_tem_cha
-    dir = loc_tem_cha
-    loc_tem_cha += 1
-  elif type == 'boo_local_temp':
-    global loc_tem_boo
-    dir = loc_tem_boo
-    loc_tem_boo += 1
-  elif type == 'int_global':
-    global glo_int
-    dir = glo_int
-    glo_int += 1
-  elif type == 'flo_global':
-    global glo_flo
-    dir = glo_flo
-    glo_flo += 1
-  elif type == 'str_global':
-    global glo_str
-    dir = glo_str
-    glo_str += 1
-  elif type == 'cha_global':
-    global glo_cha
-    dir = glo_cha
-    glo_cha += 1
-  elif type == 'boo_global':
-    global glo_boo
-    dir = glo_boo
-    glo_boo += 1
-  elif type == 'int_global_temp':
-    global glo_tem_int
-    dir = glo_tem_int
-    glo_tem_int += 1
-  elif type == 'flo_global_temp':
-    global glo_tem_flo
-    dir = glo_tem_flo
-    glo_tem_flo += 1
-  elif type == 'str_global_temp':
-    global glo_tem_str
-    dir = glo_tem_str
-    glo_tem_str += 1
-  elif type == 'cha_global_temp':
-    global glo_tem_cha
-    dir = glo_tem_cha
-    glo_tem_cha += 1
-  elif type == 'boo_global_temp':
-    global glo_tem_boo
-    dir = glo_tem_boo
-    glo_tem_boo += 1
-  elif type == 'int_constant':
-    global con_int
-    dir = con_int
-    con_int += 1
-  elif type == 'flo_constant':
-    global con_flo
-    dir = con_flo
-    con_flo += 1
-  elif type == 'str_constant':
-    global con_str
-    dir = con_str
-    con_str += 1
-  elif type == 'cha_constant':
-    global con_cha
-    dir = con_cha
-    con_cha += 1
-  elif type == 'boo_constant':
-    global con_boo
-    dir = con_boo
-    con_boo += 1
+  if actualScope != 'global':
+    if type == 'int':
+      global loc_tem_int
+      dir = loc_tem_int
+      loc_tem_int += 1
+    elif type == 'flo':
+      global loc_tem_flo
+      dir = loc_tem_flo
+      loc_tem_flo += 1
+    elif type == 'str':
+      global loc_tem_str
+      dir = loc_tem_str
+      loc_tem_str += 1
+    elif type == 'cha':
+      global loc_tem_cha
+      dir = loc_tem_cha
+      loc_tem_cha += 1
+    elif type == 'boo':
+      global loc_tem_boo
+      dir = loc_tem_boo
+      loc_tem_boo += 1
+  else:
+    if type == 'int':
+      global glo_tem_int
+      dir = glo_tem_int
+      glo_tem_int += 1
+    elif type == 'flo':
+      global glo_tem_flo
+      dir = glo_tem_flo
+      glo_tem_flo += 1
+    elif type == 'str':
+      global glo_tem_str
+      dir = glo_tem_str
+      glo_tem_str += 1
+    elif type == 'cha':
+      global glo_tem_cha
+      dir = glo_tem_cha
+      glo_tem_cha += 1
+    elif type == 'boo':
+      global glo_tem_boo
+      dir = glo_tem_boo
+      glo_tem_boo += 1
   return dir
   
 # Get the type of data using its direction
 def get_type_by_direction(dir):
-  if (dir >= 100000 and dir <= 101999):
-    return 'int_local'
-  elif (dir >= 110000 and dir <= 111999):
-    return 'int_local_temp'
-  elif (dir >= 200000 and dir <= 201999):
-    return 'int_global'
-  elif (dir >= 210000 and dir <= 211999):
-    return 'int_global_temp'
-  elif (dir >= 300000 and dir <= 301999):
-    return 'int_constant'
-  elif (dir >= 310000 and dir <= 311999):
-    return 'int_constant_temp'
-  elif (dir >= 102000 and dir <= 103999):
-    return 'flo_local'
-  elif (dir >= 112000 and dir <= 113999):
-    return 'flo_local_temp'
-  elif (dir >= 202000 and dir <= 203999):
-    return 'flo_global'
-  elif (dir >= 212000 and dir <= 213999):
-    return 'flo_global_temp'
-  elif (dir >= 302000 and dir <= 303999):
-    return 'flo_constant'
-  elif (dir >= 312000 and dir <= 313999):
-    return 'flo_constant_temp'
-  elif (dir >= 104000 and dir <= 105999):
-    return 'str_local'
-  elif (dir >= 114000 and dir <= 115999):
-    return 'str_local_temp'
-  elif (dir >= 204000 and dir <= 205999):
-    return 'str_global'
-  elif (dir >= 214000 and dir <= 215999):
-    return 'str_global_temp'
-  elif (dir >= 304000 and dir <= 305999):
-    return 'str_constant'
-  elif (dir >= 314000 and dir <= 315999):
-    return 'str_constant_temp'
-  elif (dir >= 106000 and dir <= 107999):
-    return 'cha_local'
-  elif (dir >= 116000 and dir <= 117999):
-    return 'cha_local_temp'
-  elif (dir >= 206000 and dir <= 207999):
-    return 'cha_global'
-  elif (dir >= 216000 and dir <= 217999):
-    return 'cha_global_temp'
-  elif (dir >= 306000 and dir <= 307999):
-    return 'cha_constant'
-  elif (dir >= 316000 and dir <= 317999):
-    return 'cha_constant_temp'
-  elif (dir >= 108000 and dir <= 109999):
-    return 'boo_local'
-  elif (dir >= 118000 and dir <= 119999):
-    return 'boo_local_temp'
-  elif (dir >= 208000 and dir <= 209999):
-    return 'boo_global'
-  elif (dir >= 218000 and dir <= 219999):
-    return 'boo_global_temp'
-  elif (dir >= 308000 and dir <= 309999):
-    return 'boo_constant'
-  elif (dir >= 318000 and dir <= 319999):
-    return 'boo_constant_temp'
+  if (dir >= 100000 and dir <= 101999) or (dir >= 110000 and dir <= 111999) or (dir >= 200000 and dir <= 201999) or (dir >= 210000 and dir <= 211999) or (dir >= 300000 and dir <= 301999):
+    return 'int'
+  elif (dir >= 102000 and dir <= 103999) or (dir >= 112000 and dir <= 113999) or (dir >= 202000 and dir <= 203999) or (dir >= 212000 and dir <= 213999) or (dir >= 302000 and dir <= 303999):
+    return 'flo'
+  elif (dir >= 104000 and dir <= 105999) or (dir >= 114000 and dir <= 115999) or (dir >= 204000 and dir <= 205999) or (dir >= 214000 and dir <= 215999) or (dir >= 304000 and dir <= 305999):
+    return 'str'
+  elif (dir >= 106000 and dir <= 107999) or (dir >= 116000 and dir <= 117999) or (dir >= 206000 and dir <= 207999) or (dir >= 216000 and dir <= 217999) or (dir >= 306000 and dir <= 307999):
+    return 'cha'
+  elif (dir >= 108000 and dir <= 109999) or (dir >= 118000 and dir <= 119999) or (dir >= 208000 and dir <= 209999) or (dir >= 218000 and dir <= 219999) or (dir >= 308000 and dir <= 309999):
+    return 'boo'
