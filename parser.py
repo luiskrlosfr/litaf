@@ -685,10 +685,10 @@ def p_value(p):
 # Constants
 def p_constants(p):
   '''
-  constants : INT_CONST
-            | CHAR_CONST
-            | FLOAT_CONST
-            | STRING_CONST
+  constants : int_const
+            | char_const
+            | float_const
+            | string_const
             | bool_values
   '''
   p[0] = p[1]
@@ -724,10 +724,11 @@ with open(name, 'r') as myfile:
   result = parser.parse(line)
   # print(result)
 # print(scopeTable.scopes)
-# for scope in scopeTable.scopes.values():
-#   print(scope[1].vars)
+for scope in scopeTable.scopes.values():
+  print(scope[1].vars)
 cont = 0
 for quad in quadruples:
   print(str(cont) + " ", end = '')
   quad.print()
   cont += 1
+

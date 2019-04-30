@@ -10,6 +10,7 @@ funcName = ''
 quadCont = 0
 contParams = 0
 tempCont = 0
+actual_value = ''
 quadruples = []
 operators = []
 types = []
@@ -19,6 +20,33 @@ ranges = []
 conditions = []
 patrons = []
 funcType = ''
+
+#---------------------------Variables MEMORIAS-------------------------------
+loc_int = 100000
+loc_flo = 102000
+loc_str = 104000
+loc_cha = 106000
+loc_boo = 108000
+loc_tem_int = 110000
+loc_tem_flo = 112000
+loc_tem_str = 114000
+loc_tem_cha = 116000
+loc_tem_boo = 118000
+glo_int = 200000
+glo_flo = 202000
+glo_str = 204000
+glo_cha = 206000
+glo_boo = 208000
+glo_tem_int = 210000
+glo_tem_flo = 212000
+glo_tem_str = 214000
+glo_tem_cha = 216000
+glo_tem_boo = 218000
+con_int = 300000
+con_flo = 302000
+con_str = 304000
+con_cha = 306000
+
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                        Syntax Rules with Nerve Points
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -30,6 +58,7 @@ def p_punt_start_litaf(p):
   '''
   global quadCont
   global quadruples
+  create_scope('constants', 'void')
   quadruples.append(Quad('GoTo',None,None,None))
   quadCont += 1
   p[0] = p[1]
@@ -38,6 +67,7 @@ def p_punt_Go_main(p):
   '''
   punt_Go_main : empty
   '''
+  reset_locals()
   global quadCont
   global quadruples
   quadruples[0].result = quadCont
@@ -102,6 +132,8 @@ def p_function_B(p): # Type of return value (includes void)
   '''
   global actualScope
   global scopeTable
+  global actualType
+  actualType = p[1]
   scopeTable.scopes[actualScope][0] = p[1]
   p[0] = p[1]
 
@@ -124,8 +156,6 @@ def p_function_D(p): # Return value for function
   global quadruples
   global quadCont
   global funcType
-  print(actualScope)
-  print(funcType)
   if funcType != 'void':
     quadruples.append(Quad('return',None,None,str(variables.pop())))
   else:
@@ -214,8 +244,11 @@ def p_factor(p):
          | OPEN_PARENTHESIS puntOP hyper_exp CLOSE_PARENTHESIS puntCP
   '''
   global variables
-  if p[1] != '(':
-    variables.append(p[1])
+  global scopeTable
+  global actualScope
+  global actual_value
+  if p[1] != '(' and check_if_exist(p[1]):
+    variables.append(actual_value)
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -329,6 +362,66 @@ def p_bool_values_cycle(p):
   quadCont += 1
   p[0] = p[1]
 
+# Constants
+def p_int_const(p):
+  '''
+  int_const : INT_CONST
+  '''
+  global scopeTable
+  global glo_int
+  global actual_value
+  if not check_if_exist(p[1]):
+    dir = glo_int
+    glo_int += 1
+  else:
+    dir = actual_value
+  scopeTable.scopes['constants'][1].push(p[1], 'int', dir)
+  p[0] = p[1]
+def p_char_const(p):
+  '''
+  char_const : CHAR_CONST
+  '''
+  global scopeTable
+  global glo_cha
+  global actual_value
+  if not check_if_exist(p[1]):
+    dir = glo_cha
+    glo_cha += 1
+  else:
+    dir = actual_value
+  scopeTable.scopes['constants'][1].push(p[1], 'cha', dir)
+  p[0] = p[1]
+
+def p_float_const(p):
+  '''
+  float_const : FLOAT_CONST
+  '''
+  global scopeTable
+  global glo_flo
+  global actual_value
+  if not check_if_exist(p[1]):
+    dir = glo_flo
+    glo_flo += 1
+  else:
+    dir = actual_value
+  scopeTable.scopes['constants'][1].push(p[1], 'flo', dir)
+  p[0] = p[1]
+
+def p_string_const(p):
+  '''
+  string_const : STRING_CONST
+  '''
+  global scopeTable
+  global glo_str
+  global actual_value
+  if not check_if_exist(p[1]):
+    dir = glo_str
+    glo_str += 1
+  else:
+    dir = actual_value
+  scopeTable.scopes['constants'][1].push(p[1], 'str', dir)
+  p[0] = p[1]
+
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                             Nerve Points
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -345,6 +438,7 @@ def p_getFunId(p):
   '''
   getFunId : FUNCTION_ID
   '''
+  reset_locals()
   create_scope(p[1], None)
   p[0] = p[1]
 
@@ -372,7 +466,7 @@ def p_puntSum(p):
   global variables
   global tempCont
   if len(operators) > 0:
-    if operators[-1] == '+' or operators[-1] == '-':   
+    if operators[-1] == '+' or operators[-1] == '-': 
       quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(tempCont)))
       variables.append("t"+str(tempCont))
       tempCont += 1
@@ -608,7 +702,8 @@ def insert_var(var, typ):
   if var in scopeTable.scopes[actualScope][1].vars:
     print("Error: Variable '{}' ya definida").format(var)
   else:
-    scopeTable.scopes[actualScope][1].push(var, typ)
+    dir = calc_dir(typ)
+    scopeTable.scopes[actualScope][1].push(var, typ, dir)
 # Function for setting actual scope
 def create_scope(scope, typ):
   global scopeTable
@@ -618,4 +713,106 @@ def create_scope(scope, typ):
     print("Error: Función '{}' ya existe".format(actualScope))
   else:
     scopeTable.push(scope, typ, VarTable())
+# Function for resetting local directions
+def reset_locals():
+  global loc_int
+  global loc_flo
+  global loc_str
+  global loc_cha
+  global loc_tem_int
+  global loc_tem_flo
+  global loc_tem_str
+  global loc_tem_cha 
+  loc_int = 100000
+  loc_flo = 102000
+  loc_str = 104000
+  loc_cha = 106000
+  loc_tem_int = 110000
+  loc_tem_flo = 112000
+  loc_tem_str = 114000
+  loc_tem_cha = 116000 
+
+def calc_dir(typ):
+  global actualScope
+  dir = 0
+  if actualScope == 'global':
+    if typ == 'int':
+      global glo_int
+      dir = glo_int
+      glo_int += 1
+    elif typ == 'flo':
+      global glo_flo
+      dir = glo_flo
+      glo_flo += 1
+    elif typ == 'str':
+      global glo_str
+      dir = glo_str
+      glo_str += 1
+    elif typ == 'cha':
+      global glo_cha
+      dir = glo_cha
+      glo_cha += 1
+    elif typ == 'boo':
+      global glo_boo
+      dir = glo_boo
+      glo_boo += 1
+  if actualScope == 'constants':
+    if typ == 'int':
+      global con_int
+      dir = con_int
+      con_int += 1
+    elif typ == 'flo':
+      global con_flo
+      dir = con_flo
+      con_flo += 1
+    elif typ == 'str':
+      global con_str
+      dir = con_str
+      con_str += 1
+    elif typ == 'cha':
+      global con_cha
+      dir = con_cha
+      con_cha += 1
+    elif typ == 'boo':
+      global con_boo
+      dir = con_boo
+      con_boo += 1
+  else:
+    if typ == 'int':
+      global loc_int
+      dir = loc_int
+      loc_int += 1
+    elif typ == 'flo':
+      global loc_flo
+      dir = loc_flo
+      loc_flo += 1
+    elif typ == 'str':
+      global loc_str
+      dir = loc_str
+      loc_str += 1
+    elif typ == 'cha':
+      global loc_cha
+      dir = loc_cha
+      loc_cha += 1
+    elif typ == 'boo':
+      global loc_boo
+      dir = loc_boo
+      loc_boo += 1
+  return dir
+
+def check_if_exist(var):
+  global scopeTable
+  global actualScope
+  global actual_value
+  if var in scopeTable.scopes[actualScope][1].vars:
+    actual_value = scopeTable.scopes[actualScope][1].vars[var][1]
+    return True
+  elif var in scopeTable.scopes['global'][1].vars:
+    actual_value = scopeTable.scopes['global'][1].vars[var][1]
+    return True
+  elif var in scopeTable.scopes['constants'][1].vars:
+    actual_value = scopeTable.scopes['constants'][1].vars[var][1]
+    return True
+  else:
+    return False
 print(scopeTable.scopes)
