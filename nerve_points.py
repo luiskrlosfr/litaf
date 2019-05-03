@@ -187,7 +187,7 @@ def p_function_call_name(p):
   global funcName
   global quadCont
   funcName = p[1]
-  quadruples.append(Quad('era',funcName,None,None))
+  quadruples.append(Quad('ERA', None, None, funcName))
   quadCont += 1
   p[0] = p[1]
 def p_function_call_hyper_exp(p):
@@ -199,7 +199,7 @@ def p_function_call_hyper_exp(p):
   global quadruples
   global variables
   contParams += 1
-  quadruples.append(Quad('param',variables.pop(),'','param'+str(contParams)))
+  quadruples.append(Quad('PARAM', None, variables.pop(), 'param'+str(contParams)))
   quadCont += 1
   p[0] = p[1]
 
@@ -725,7 +725,7 @@ def p_punt_function_call_end(p):
   global quadruples
   global quadCont
   global funcName
-  quadruples.append(Quad('gosub',funcName,None,None))
+  quadruples.append(Quad('GoSub', None, None, funcName))
   quadCont += 1
   p[0] = p[1]
 def p_puntLoopDown(p):
