@@ -694,14 +694,6 @@ def p_constants(p):
   '''
   p[0] = p[1]
 
-# Bool Values
-def p_bool_values(p):
-  '''
-  bool_values : TRUE
-              | FALSE
-  '''
-  p[0] = p[1]
-
 # Empty
 def p_empty(p):
   '''

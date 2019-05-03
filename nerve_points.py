@@ -47,6 +47,7 @@ con_int = 300000
 con_flo = 302000
 con_str = 304000
 con_cha = 306000
+con_boo = 308000
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                        Syntax Rules with Nerve Points
@@ -285,8 +286,6 @@ def p_loop_value(p):
     quadCont += 1
     variables.append(result)
     jumps.append(quadCont)
-    quadCont += 1
-    jumps.append(quadCont)
     quadruples.append(Quad('GoToF', variables.pop(), None, None))
     quadCont += 1
   p[0] = p[1]
@@ -300,6 +299,7 @@ def p_patron(p):
   global ranges
   global patrons
   global tempCont
+  global scopeTable
   up = variables.pop()
   low = ranges[-1]
   operator = patrons.pop()
@@ -354,7 +354,8 @@ def p_writing_A(p):
   global quadruples
   global variables
   global quadCont
-  quadruples.append(Quad('Writing', "", "", str(variables.pop())))
+  message = variables.pop()
+  quadruples.append(Quad('Writing', None, None, message))
   quadCont += 1
   p[0] = ""
   for x in range(1, len(p)):
@@ -368,17 +369,23 @@ def p_writing_A(p):
 # Bool Values
 def p_bool_values_cycle(p):
   '''
-  bool_values_cycle : TRUE
-                    | FALSE
+  bool_values_cycle : bool_values
   '''
   global quadruples
   global quadCont
   global variables
   global tempCont
-  quadruples.append(Quad('==', str(variables.pop()), p[1], "t"+str(tempCont)))
-  variables.append("t"+str(tempCont))
-  tempCont += 1
-  quadCont += 1
+  global actual_value
+  up = variables.pop()
+  low = actual_value
+  operator = "=="
+  result = valid_operation(operator, low, up)
+  if result == -1:
+    print("Error: Operación inválida")
+  else:
+    quadruples.append(Quad(operator, up, low, result))
+    variables.append(result)
+    quadCont += 1
   p[0] = p[1]
 
 # Constants
@@ -411,6 +418,16 @@ def p_string_const(p):
   '''
   if not check_if_exist(p[1]):
     insert_constant(p[1], 'str')
+  p[0] = p[1]
+
+# Bool Values
+def p_bool_values(p):
+  '''
+  bool_values : TRUE
+              | FALSE
+  '''
+  if not check_if_exist(p[1]):
+    insert_constant(p[1], 'boo')
   p[0] = p[1]
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -571,7 +588,7 @@ def p_puntIF(p):
   global variables
   global quadCont
   global jumps
-  quadruples.append(Quad('GoToF',str(variables.pop()),'',''))
+  quadruples.append(Quad('GoToF', variables.pop(), None, None))
   jumps.append(quadCont)
   quadCont += 1
   p[0] = p[1]
@@ -584,7 +601,7 @@ def p_puntElse(p):
   global variables
   global quadCont
   global jumps
-  quadruples.append(Quad('GoTo','','',''))
+  quadruples.append(Quad('GoTo',None,None,None))
   false = jumps.pop()
   jumps.append(quadCont)
   quadCont += 1
@@ -599,7 +616,7 @@ def p_puntIfEnd(p):
   global quadCont
   global jumps
   end = jumps.pop()
-  quadruples[end].result = str(quadCont)
+  quadruples[end].result = quadCont
   p[0] = p[1]
 
 def p_puntElseIfGOTO(p):
@@ -612,9 +629,10 @@ def p_puntElseIfGOTO(p):
   global jumps
   returning = jumps.pop()
   jumps.append(quadCont)
-  quadruples.append(Quad('GoTo', '', '', '',))
+  quadruples.append(Quad('GoTo', None, None, None))
   quadCont += 1
-  quadruples[returning].result = str(quadCont-1)
+  print(quadCont)
+  quadruples[returning].result = quadCont
   p[0] = p[1]
 
 def p_puntElseIfGoToF(p):
@@ -626,9 +644,8 @@ def p_puntElseIfGoToF(p):
   global quadCont
   global jumps
   jumps.append(quadCont)
-  quadruples.append(Quad('GoToF','',str(variables.pop()),''))
+  quadruples.append(Quad('GoToF',None, variables.pop(), None))
   quadCont += 1
-  
   p[0] = p[1]
 
 def p_puntElseIfEnd(p):
@@ -638,7 +655,7 @@ def p_puntElseIfEnd(p):
   global jumps
   global quadruples
   returning = jumps.pop()
-  quadruples[returning].result = str(quadCont)
+  quadruples[returning].result = quadCont
   p[0] = p[1]
 
 def p_puntUntilJump(p):
@@ -654,12 +671,12 @@ def p_puntUntil(p):
   '''
   puntUntil : empty
   '''
+  global variables
   global quadruples
   global quadCont
   global jumps
-  print(variables)
   result = variables.pop()
-  quadruples.append(Quad('GoToF',str(result),None,None))
+  quadruples.append(Quad('GoToF', result, None, None))
   jumps.append(quadCont)
   quadCont += 1
   p[0] = p[1]
@@ -673,9 +690,9 @@ def p_puntUntilEnd(p):
   global jumps
   end = jumps.pop()                           # Pops GOTOF QUAD and fills the missing jump with actual counter quadruple
   quadCont += 1
-  quadruples[end].result = str(quadCont)
+  quadruples[end].result = quadCont
   returning = jumps.pop()                     # Pops QUAD for generating GOTO QUAD to re evaluation of the conditional exp of the cycle
-  quadruples.append(Quad('GOTO','','',str(returning)))
+  quadruples.append(Quad('GoTo', None, None, returning))
   p[0] = p[1]
 def p_puntLoopID(p):
   '''
@@ -686,9 +703,11 @@ def p_puntLoopID(p):
   global operators
   global scopeTable
   global actualScope
+  global jumps
   if check_if_exist(p[1]):
     variables.append(actual_value)
     ranges.append(actual_value)
+    jumps.append(quadCont)
   else:
     print("Error: variable '{}' sin definir".format(p[1]))
   p[0] = p[1]
