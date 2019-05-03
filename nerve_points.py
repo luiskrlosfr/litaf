@@ -48,7 +48,7 @@ con_flo = 302000
 con_str = 304000
 con_cha = 306000
 con_boo = 308000
-
+memory = {}
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                        Syntax Rules with Nerve Points
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -388,7 +388,10 @@ def p_bool_values_cycle(p):
     quadCont += 1
   p[0] = p[1]
 
-# Constants
+#--------------
+#   Constants
+#-------------
+# Insert into Constant table an INT constant
 def p_int_const(p):
   '''
   int_const : INT_CONST
@@ -396,6 +399,8 @@ def p_int_const(p):
   if not check_if_exist(p[1]):
     insert_constant(p[1], 'int')
   p[0] = p[1]
+
+# Insert into Constant table a CHA constant
 def p_char_const(p):
   '''
   char_const : CHAR_CONST
@@ -404,6 +409,7 @@ def p_char_const(p):
     insert_constant(p[1], 'cha')
   p[0] = p[1]
 
+# Insert into Constant table a FLO constant
 def p_float_const(p):
   '''
   float_const : FLOAT_CONST
@@ -412,6 +418,7 @@ def p_float_const(p):
     insert_constant(p[1], 'flo')
   p[0] = p[1]
 
+# Insert into Constant table a STR constant
 def p_string_const(p):
   '''
   string_const : STRING_CONST
@@ -420,7 +427,7 @@ def p_string_const(p):
     insert_constant(p[1], 'str')
   p[0] = p[1]
 
-# Bool Values
+# Insert into Constant table a BOO constant
 def p_bool_values(p):
   '''
   bool_values : TRUE
@@ -444,7 +451,7 @@ def p_createGlobal(p):
   create_scope("global", "void")
   p[0] = p[1]
 
-# Get Scope of Function
+# Creates Scope for Function
 def p_getFunId(p):
   '''
   getFunId : FUNCTION_ID
@@ -453,13 +460,15 @@ def p_getFunId(p):
   create_scope(p[1], None)
   p[0] = p[1]
 
+# Creates Scope for Class
 def p_getClassId(p):
   '''
   getClassId : CLASS_ID
   '''
   create_scope(p[1], "class")
   p[0] = p[1]
-# Set Main scope
+
+# Creates Scope for Main
 def p_setMain(p):
   '''
   setMain : empty
@@ -467,6 +476,7 @@ def p_setMain(p):
   create_scope("main", "int")
   p[0] = p[1]
 
+# Generate Quadruple Sum and Difference
 def p_puntSum(p):
   '''
   puntSum : empty
@@ -488,7 +498,8 @@ def p_puntSum(p):
         variables.append(result)
         quadCont += 1
   p[0] = p[1]
-  
+
+# Generate Quadruple Multiplication and Division
 def p_puntMul(p):
   '''
   puntMul : empty
@@ -512,6 +523,7 @@ def p_puntMul(p):
         quadCont += 1
   p[0] = p[1]
 
+# Append '=' to Operators Stack
 def p_appendEqual(p):
   '''
   appendEqual : empty
@@ -520,6 +532,7 @@ def p_appendEqual(p):
   operators.append('=')
   p[0] = p[1]
 
+# Generate Quadruple of Logical Comparison Operations
 def p_puntLogical(p):
   '''
   puntLogical : empty
@@ -542,6 +555,8 @@ def p_puntLogical(p):
         variables.append(result)
         quadCont += 1
   p[0] = p[1]
+
+# Generate Quadruples AND/OR
 def p_puntAndOr(p):
   '''
   puntAndOr : empty
@@ -564,6 +579,8 @@ def p_puntAndOr(p):
         variables.append(result)
         quadCont += 1
   p[0] = p[1]
+
+# Appends '(' to Operators Stack
 def p_puntOP(p):
   '''
   puntOP : empty
@@ -572,6 +589,7 @@ def p_puntOP(p):
   operators.append('(')
   p[0] = p[1]
 
+# Removes '(' from Operators Stack
 def p_puntCP(p):
   '''
   puntCP : empty
@@ -580,6 +598,7 @@ def p_puntCP(p):
   operators.pop()
   p[0] = p[1]
 
+# Generates incomplete Go-To-False Quadruple for IF
 def p_puntIF(p):
   '''
   puntIF : empty
@@ -593,6 +612,7 @@ def p_puntIF(p):
   quadCont += 1
   p[0] = p[1]
 
+# Generates incomplete Go-To Quadruple for IF and completes its Go-To-False
 def p_puntElse(p):
   '''
   puntElse : empty
@@ -608,6 +628,7 @@ def p_puntElse(p):
   quadruples[false].result = quadCont
   p[0] = p[1]
 
+# Completes Go-To for IF
 def p_puntIfEnd(p):
   '''
   puntIfEnd : empty
@@ -619,6 +640,7 @@ def p_puntIfEnd(p):
   quadruples[end].result = quadCont
   p[0] = p[1]
 
+# Generates incomplete Go-To Quadruple for ELSIF and completes its Go-To-False
 def p_puntElseIfGOTO(p):
   '''
   puntElseIfGOTO : empty
@@ -634,6 +656,7 @@ def p_puntElseIfGOTO(p):
   quadruples[returning].result = quadCont
   p[0] = p[1]
 
+# Generates incomplete Go-To-False Quadruple for ELSIF
 def p_puntElseIfGoToF(p):
   '''
   puntElseIfGoToF : empty
@@ -647,6 +670,7 @@ def p_puntElseIfGoToF(p):
   quadCont += 1
   p[0] = p[1]
 
+# Completes Go-To for ELSIF
 def p_puntElseIfEnd(p):
   '''
   puntElseIfEnd : empty
@@ -657,6 +681,7 @@ def p_puntElseIfEnd(p):
   quadruples[returning].result = quadCont
   p[0] = p[1]
 
+# Appends to Jumps Stack the quadruple where the UNTIL Cycle condition starts
 def p_puntUntilJump(p):
   '''
   puntUntilJump : empty
@@ -666,6 +691,7 @@ def p_puntUntilJump(p):
   jumps.append(quadCont)
   p[0] = p[1]
 
+# Generates Incomplete Go-To-False Quadruple for UNTIL Cycle
 def p_puntUntil(p):
   '''
   puntUntil : empty
@@ -680,6 +706,7 @@ def p_puntUntil(p):
   quadCont += 1
   p[0] = p[1]
 
+# Generates incomplete Go-To Quadruple for UNNTIL Cycle and completes its Go-To-False
 def p_puntUntilEnd(p):
   '''
   puntUntilEnd : empty
@@ -693,6 +720,8 @@ def p_puntUntilEnd(p):
   returning = jumps.pop()                     # Pops QUAD for generating GOTO QUAD to re evaluation of the conditional exp of the cycle
   quadruples.append(Quad('GoTo', None, None, returning))
   p[0] = p[1]
+
+# Appends to Jumps Stack the quadruple where the LOOP Cycle condition starts and checks if Control Variable exists
 def p_puntLoopID(p):
   '''
   puntLoopID :  ID
@@ -711,6 +740,7 @@ def p_puntLoopID(p):
     print("Error: variable '{}' sin definir".format(p[1]))
   p[0] = p[1]
 
+# Appends '<=' to Operator Stack
 def p_puntLoopUp(p):
   '''
   puntLoopUp : empty
@@ -718,6 +748,17 @@ def p_puntLoopUp(p):
   global conditions
   conditions.append('<=')
   p[0] = p[1]
+
+# Appends '>=' to Operator Stack
+def p_puntLoopDown(p):
+  '''
+  puntLoopDown : empty
+  '''
+  global conditions
+  conditions.append('>=')
+  p[0] = p[1]
+
+# Generates Go-Sub Quadruple for function call
 def p_punt_function_call_end(p):
   '''
   punt_function_call_end : empty
@@ -728,12 +769,17 @@ def p_punt_function_call_end(p):
   quadruples.append(Quad('GoSub', None, None, funcName))
   quadCont += 1
   p[0] = p[1]
-def p_puntLoopDown(p):
+
+# Creates Constants Memory structure that is going to be used in Virtual Machine
+def p_puntSetMemory(p):
   '''
-  puntLoopDown : empty
+  puntSetMemory : empty
   '''
-  global conditions
-  conditions.append('>=')
+  global scopeTable
+  global memory
+  constants = scopeTable.scopes['constants'][1].vars
+  for con in constants:
+    memory[constants[con][1]] = con
   p[0] = p[1]
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                                 Functions
@@ -746,11 +792,13 @@ def insert_var(var, typ, scope):
   else:
     dir = calc_dir(typ, scope)
     scopeTable.scopes[scope][1].push(var, typ, dir)
+
 # Function for inserting constant in constants table
 def insert_constant(var, typ):
   if var not in scopeTable.scopes['constants'][1].vars:
     dir = calc_dir(typ, 'constants')
     scopeTable.scopes['constants'][1].push(var, typ, dir)
+
 # Function for setting actual scope
 def create_scope(scope, typ):
   global scopeTable
@@ -760,6 +808,7 @@ def create_scope(scope, typ):
     print("Error: Función '{}' ya existe".format(actualScope))
   else:
     scopeTable.push(scope, typ, VarTable())
+
 # Function for resetting local directions
 def reset_locals():
   global loc_int
@@ -779,6 +828,7 @@ def reset_locals():
   loc_tem_str = 114000
   loc_tem_cha = 116000 
 
+# Set memory direction for variable
 def calc_dir(typ, scope):
   dir = 0
   if scope == 'global':
@@ -846,6 +896,7 @@ def calc_dir(typ, scope):
       loc_boo += 1
   return dir
 
+# Checks if value exists in any of the Tables (actualscope, global or constant)
 def check_if_exist(var):
   global scopeTable
   global actualScope
