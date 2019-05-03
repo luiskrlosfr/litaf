@@ -335,7 +335,7 @@ def p_condition_exp(p):
   p[0]
 def p_condition_A(p):
   '''
-  condition_A : puntElseIfGOTO ELSIF condition_exp puntElseIfGoToF built_block puntElseIfEnd condition_A
+  condition_A : puntElseIfGOTO ELSIF condition_exp puntElseIfGoToF built_block condition_A puntElseIfEnd
               | empty
   '''
   p[0] = ""

@@ -605,7 +605,7 @@ def p_puntElse(p):
   false = jumps.pop()
   jumps.append(quadCont)
   quadCont += 1
-  quadruples[false].result = str(quadCont)
+  quadruples[false].result = quadCont
   p[0] = p[1]
 
 def p_puntIfEnd(p):
@@ -631,7 +631,6 @@ def p_puntElseIfGOTO(p):
   jumps.append(quadCont)
   quadruples.append(Quad('GoTo', None, None, None))
   quadCont += 1
-  print(quadCont)
   quadruples[returning].result = quadCont
   p[0] = p[1]
 
