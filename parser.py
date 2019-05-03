@@ -88,6 +88,7 @@ def p_declaration(p):
   '''
   declaration : function_B declaration_A
   '''
+  global actualScope
   p[0] = p[1] + p[2]
 def p_declaration_A1(p):
   '''
@@ -131,7 +132,7 @@ def p_function_C(p): # Statements inside function
 # Function Call
 def p_function_call(p):
   '''
-  function_call : function_call_name OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+  function_call : function_call_name OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS punt_function_call_end
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -139,7 +140,7 @@ def p_function_call(p):
   p[0]
 def p_function_call_A(p): # Parameters for function call
   '''
-  function_call_A : function_call_hyper_exp function_call_A1 punt_function_call_end
+  function_call_A : function_call_hyper_exp function_call_A1
                   | empty
   '''
   p[0] = ""
@@ -334,7 +335,7 @@ def p_condition_exp(p):
   p[0]
 def p_condition_A(p):
   '''
-  condition_A : puntElseIfGOTO ELSIF condition_exp puntElseIfGoToF built_block puntElseIfEnd condition_A
+  condition_A : puntElseIfGOTO ELSIF condition_exp puntElseIfGoToF built_block condition_A puntElseIfEnd
               | empty
   '''
   p[0] = ""
@@ -685,19 +686,11 @@ def p_value(p):
 # Constants
 def p_constants(p):
   '''
-  constants : INT_CONST
-            | CHAR_CONST
-            | FLOAT_CONST
-            | STRING_CONST
+  constants : int_const
+            | char_const
+            | float_const
+            | string_const
             | bool_values
-  '''
-  p[0] = p[1]
-
-# Bool Values
-def p_bool_values(p):
-  '''
-  bool_values : TRUE
-              | FALSE
   '''
   p[0] = p[1]
 
@@ -724,8 +717,8 @@ with open(name, 'r') as myfile:
   result = parser.parse(line)
   # print(result)
 # print(scopeTable.scopes)
-# for scope in scopeTable.scopes.values():
-#   print(scope[1].vars)
+for scope in scopeTable.scopes.values():
+  print(scope[1].vars)
 cont = 0
 for quad in quadruples:
   print(str(cont) + " ", end = '')
