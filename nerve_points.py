@@ -77,12 +77,18 @@ def p_punt_Go_main(p):
 # Declaration
 def p_declaration_A(p):
   '''
-  declaration_A : ID declaration_A1
+  declaration_A : declarationID declaration_A1
+  '''
+  p[0] = p[1] + p[2]
+
+def p_declarationID(p):
+  '''
+  declarationID : ID
   '''
   global actualType
   global actualScope
   insert_var(p[1], actualType, actualScope)
-  p[0] = p[1] + p[2]
+  p[0] = p[1]
 
 # Assign
 def p_assign(p):
@@ -787,11 +793,12 @@ def p_puntSetMemory(p):
 # Function for inserting variable in scope table
 def insert_var(var, typ, scope):
   global scopeTable
-  if var in scopeTable.scopes[scope][1].vars:
-    print("Error: Variable '{}' ya definida".format(var))
-  else:
+  if var not in scopeTable.scopes[scope][1].vars:
     dir = calc_dir(typ, scope)
     scopeTable.scopes[scope][1].push(var, typ, dir)
+  else:
+    print("Error: Variable '{}' ya definida".format(var))
+    
 
 # Function for inserting constant in constants table
 def insert_constant(var, typ):
@@ -922,54 +929,64 @@ def valid_operation(oper, op1, op2):
   if result[0] == 'e' or result[0] == 'o':
     return -1
   else:
-    return calc_new_direction(result)
+    return calc_new_direction(result, oper)
 
 # Get the new direction
-def calc_new_direction(type):
+def calc_new_direction(type, operator):
   global actualScope
   dir = 0
   if actualScope != 'global':
     if type == 'int':
       global loc_tem_int
       dir = loc_tem_int
-      loc_tem_int += 1
+      if operator != '=':
+        loc_tem_int += 1
     elif type == 'flo':
       global loc_tem_flo
       dir = loc_tem_flo
-      loc_tem_flo += 1
+      if operator != '=':
+        loc_tem_flo += 1
     elif type == 'str':
       global loc_tem_str
       dir = loc_tem_str
-      loc_tem_str += 1
+      if operator != '=':
+        loc_tem_str += 1
     elif type == 'cha':
       global loc_tem_cha
       dir = loc_tem_cha
-      loc_tem_cha += 1
+      if operator != '=':
+        loc_tem_cha += 1
     elif type == 'boo':
       global loc_tem_boo
       dir = loc_tem_boo
-      loc_tem_boo += 1
+      if operator != '=':
+        loc_tem_boo += 1
   else:
     if type == 'int':
       global glo_tem_int
       dir = glo_tem_int
-      glo_tem_int += 1
+      if operator != '=':
+        glo_tem_int += 1
     elif type == 'flo':
       global glo_tem_flo
       dir = glo_tem_flo
-      glo_tem_flo += 1
+      if operator != '=':
+        glo_tem_flo += 1
     elif type == 'str':
       global glo_tem_str
       dir = glo_tem_str
-      glo_tem_str += 1
+      if operator != '=':
+        glo_tem_str += 1
     elif type == 'cha':
       global glo_tem_cha
       dir = glo_tem_cha
-      glo_tem_cha += 1
+      if operator != '=':
+        glo_tem_cha += 1
     elif type == 'boo':
       global glo_tem_boo
       dir = glo_tem_boo
-      glo_tem_boo += 1
+      if operator != '=':
+        glo_tem_boo += 1
   return dir
   
 # Get the type of data using its direction

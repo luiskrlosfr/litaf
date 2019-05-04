@@ -705,14 +705,13 @@ parser = yacc.yacc()
 
 # Read file as an input and evaluate if the grammar is acceptable or not. Print a message if it finds an error
 # in the grammar.
-print("Teclea el nombre del archivo de texto")
+print("Teclea el nombre del archivo a compilar")
 name = input('parser >> ')
 
 with open(name, 'r') as myfile:
   line = myfile.read().replace('\n', '')
   result = parser.parse(line)
-  # print(result)
-# print(scopeTable.scopes)
-# for scope in scopeTable.scopes.values():
-#   print(scope[1].vars)
+
+# for quad in quadruples:
+#   print(quad.print())
 
