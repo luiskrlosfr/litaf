@@ -26,13 +26,9 @@ def p_classes(p):
 # Global Vars
 def p_global_vars(p):
   '''
-  global_vars : createGlobal declarations global_vars_A
-              | empty
+  global_vars : createGlobal global_vars_A
   '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+  p[0] = p[1] + p[2]
 
 def p_global_vars_A(p):
   '''

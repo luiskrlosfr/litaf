@@ -904,11 +904,11 @@ def check_if_exist(var):
   if var in scopeTable.scopes[actualScope][1].vars:
     actual_value = scopeTable.scopes[actualScope][1].vars[var][1]
     return True
-  elif var in scopeTable.scopes['global'][1].vars:
-    actual_value = scopeTable.scopes['global'][1].vars[var][1]
-    return True
   elif var in scopeTable.scopes['constants'][1].vars:
     actual_value = scopeTable.scopes['constants'][1].vars[var][1]
+    return True
+  elif var in scopeTable.scopes['global'][1].vars:
+    actual_value = scopeTable.scopes['global'][1].vars[var][1]
     return True
   else:
     return False
