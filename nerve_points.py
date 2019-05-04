@@ -99,15 +99,17 @@ def p_assign(p):
   global quadruples
   global variables
   global quadCont
+  global actual_value
   operator = operators.pop()
   operand2 = variables.pop()
-  operand1 = scopeTable.scopes[actualScope][1].vars[p[1]][1]
-  result = valid_operation(operator, operand1, operand2)
-  if result == -1:
-    print("Error: Operación inválida")
-  else:
-    quadruples.append(Quad(operator, None, operand2, operand1))
-    quadCont += 1
+  if check_if_exist(p[1]):
+    operand1 = actual_value
+    result = valid_operation(operator, operand1, operand2)
+    if result == -1:
+      print("Error: Operación inválida")
+    else:
+      quadruples.append(Quad(operator, None, operand2, operand1))
+      quadCont += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
