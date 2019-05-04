@@ -11,6 +11,7 @@ funcName = ''
 quadCont = 0
 contParams = 0
 tempCont = 0
+negativeflag = 0
 actual_value = ''
 quadruples = []
 operators = []
@@ -270,10 +271,11 @@ def p_factor(p):
   global quadCont
   global quadruples
   global operators
+  global negativeflag
   if p[1] != '(' and check_if_exist(p[2]):
     variables.append(actual_value)
     if len(operators) > 0:
-      if operators[-1] == '-':
+      if operators[-1] == '-' and negativeflag ==1:
         oper = operators.pop()
         var1 = variables.pop()
         result = valid_operation(oper, var1, var1)
@@ -283,6 +285,7 @@ def p_factor(p):
           quadruples.append(Quad(oper,var1,0,result))
           variables.append(result)
           quadCont += 1
+          flag = 0
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -295,8 +298,10 @@ def p_minus(p):
         | empty
   '''
   global operators
+  global negativeflag
   if p[1] == '-':
     operators.append('-')
+    negativeflag = 1
   p[0] = p[1]
 
 # Loop Cycle
