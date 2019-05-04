@@ -178,19 +178,13 @@ def p_block(p):
 # Hyper Exp
 def p_hyper_exp(p):
   '''
-  hyper_exp : negation mega_exp 
+  hyper_exp : negation mega_exp punt_negation
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
 
-def p_negation(p):
-  '''
-  negation : NOT
-           | empty
-  '''
-  p[0] = p[1]
 # Mega Exp
 def p_mega_exp(p):
   '''

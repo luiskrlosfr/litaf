@@ -33,8 +33,7 @@ tokens = [
   'COMMENT',              # Comments
   'DOT',                     # Assignation and Calls
   'COMMA',
-  'DOUBLE_DOT',
-  'AT'
+  'DOUBLE_DOT'
 ]
 
 # Tokens of Reserved Words

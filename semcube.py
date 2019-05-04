@@ -546,6 +546,9 @@ class Semcube:
                             'boo' : 'boo',
                             'str' : 'error type mismatch',
                             'void' : 'error type mismatch'
+                        },
+                        '!' :{
+                            None : 'boo'
                         }
                     },
                     #tipo void
