@@ -112,7 +112,7 @@ def p_assign_A(p):
 # Function
 def p_function(p):
   '''
-  function : FUN getFunId OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS function_type function_C function_D END 
+  function : FUN getFunId OPEN_PARENTHESIS params CLOSE_PARENTHESIS IS function_type function_C function_D END 
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -168,33 +168,23 @@ def p_statement(p):
 def p_block(p):
   '''
   block : assign
-        | hyper_exp
         | cycle
         | condition
         | lecture
         | writing
-        | list_methods
         | COMMENT
   '''
   p[0] = p[1]
 # Hyper Exp
 def p_hyper_exp(p):
   '''
-  hyper_exp : mega_exp hyper_exp_A
+  hyper_exp : negation mega_exp punt_negation
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_hyper_exp_A(p):
-  '''
-  hyper_exp_A : NOT hyper_exp
-              | empty
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+
 # Mega Exp
 def p_mega_exp(p):
   '''
@@ -467,12 +457,19 @@ def p_methods_A(p):
 # Constructor
 def p_constructor(p):
   '''
-  constructor : visibility CLASS_ID OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
+  constructor : visibility CLASS_ID OPEN_PARENTHESIS params CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
+def p_params(p):
+  '''
+  params : function_A
+         | empty
+  '''
+  p[0] = p[1]
 def p_constructor_A(p):
   '''
   constructor_A : statement constructor_A
@@ -508,14 +505,14 @@ def p_declaration_class_A(p):
 # Class Values
 def p_class_values(p):
   '''
-  class_values : call_method
-               | call_attribute
+  class_values :  call_attribute
+               | call_method
   '''
   p[0] = p[1]
 # Call Attribute
 def p_call_attribute(p):
   '''
-  call_attribute : ID DOT ID
+  call_attribute : ID
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -524,7 +521,7 @@ def p_call_attribute(p):
 # Call Method
 def p_call_method(p):
   '''
-  call_method : ID DOT FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+  call_method : FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -561,17 +558,10 @@ def p_declaration_list_A1(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-# List Values
-def p_list_values(p):
-  '''
-  list_values : list_val
-              | list_pop
-  '''
-  p[0] = p[1]
 # List Value (Single)
 def p_list_val(p):
   '''
-  list_val : ID OPEN_BRACKET INT_CONST CLOSE_BRACKET
+  list_val : OPEN_BRACKET INT_CONST CLOSE_BRACKET
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -585,12 +575,13 @@ def p_list_methods(p):
                | list_concat
                | list_empty
                | list_reverse
+               | list_pop
   '''
   p[0] = p[1]
 # List Pop
 def p_list_pop(p):
   '''
-  list_pop : ID DOT POP OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  list_pop : POP OPEN_PARENTHESIS CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -599,7 +590,7 @@ def p_list_pop(p):
 # List Push
 def p_list_push(p):
   '''
-  list_push : ID DOT PUSH OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
+  list_push : PUSH OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -608,7 +599,7 @@ def p_list_push(p):
 # List Size
 def p_list_size(p):
   '''
-  list_size : ID DOT SIZE OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  list_size : SIZE 
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -617,7 +608,7 @@ def p_list_size(p):
 # List Concat
 def p_list_concat(p):
   '''
-  list_concat : ID DOT JOIN OPEN_PARENTHESIS list_concat_A CLOSE_PARENTHESIS
+  list_concat : JOIN OPEN_PARENTHESIS list_concat_A CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -632,7 +623,7 @@ def p_list_concat_A(p):
 # List Empty
 def p_list_empty(p):
   '''
-  list_empty : ID DOT EMPTY OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  list_empty : EMPTY OPEN_PARENTHESIS CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -641,7 +632,7 @@ def p_list_empty(p):
 # List Reverse
 def p_list_reverse(p):
   '''
-  list_reverse : ID DOT FLIP OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  list_reverse : FLIP OPEN_PARENTHESIS CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -675,11 +666,16 @@ def p_type(p):
 # Value
 def p_value(p):
   '''
-  value : ID
+  value : ID structure_values
         | constants
-        | list_values
-        | class_values
         | function_call
+    
+  structure_values : DOT structure_values_A
+                   | list_val
+                   | empty
+
+  structure_values_A : list_methods
+                     | class_values
   '''
   p[0] = p[1]
 

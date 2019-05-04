@@ -11,6 +11,7 @@ funcName = ''
 quadCont = 0
 contParams = 0
 tempCont = 0
+negativeflag = 0
 actual_value = ''
 quadruples = []
 operators = []
@@ -84,10 +85,21 @@ def p_declaration_A(p):
   insert_var(p[1], actualType, actualScope)
   p[0] = p[1] + p[2]
 
+#Negation
+def p_negation(p):
+  '''
+  negation : NOT
+           | empty
+  '''
+  if p[1] == '!':
+    global operators
+    operators.append(p[1])
+  p[0] = p[1]
+
 # Assign
 def p_assign(p):
   '''
-  assign : ID EQUAL appendEqual assign_A 
+  assign : ID EQUAL appendEqual assign_A
   '''
   global operators
   global quadruples
@@ -111,7 +123,6 @@ def p_assign(p):
 def p_function_A(p): # Parameters for declaring functions
   '''
   function_A : type ID function_A1
-             | empty
   '''
   global actualScope
   global scopeTable
@@ -123,7 +134,7 @@ def p_function_A(p): # Parameters for declaring functions
   p[0]
 def p_function_A1(p): # Call for multiple parameters
   '''
-  function_A1 : COMMA type ID function_A1
+  function_A1 : COMMA function_A
               | empty
   '''
   if len(p) > 2:
@@ -250,19 +261,48 @@ def p_term_A1(p):
 # Factor
 def p_factor(p):
   '''
-  factor : value
+  factor : minus value 
          | OPEN_PARENTHESIS puntOP hyper_exp CLOSE_PARENTHESIS puntCP
   '''
   global variables
   global scopeTable
   global actualScope
   global actual_value
-  if p[1] != '(' and check_if_exist(p[1]):
+  global quadCont
+  global quadruples
+  global operators
+  global negativeflag
+  if p[1] != '(' and check_if_exist(p[2]):
     variables.append(actual_value)
+    if len(operators) > 0:
+      if operators[-1] == '-' and negativeflag ==1:
+        oper = operators.pop()
+        var1 = variables.pop()
+        result = valid_operation(oper, var1, var1)
+        if result == -1:
+          print("Error: Operación inválida")
+        else:
+          quadruples.append(Quad(oper,var1,0,result))
+          variables.append(result)
+          quadCont += 1
+          flag = 0
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
+#negative numbers
+def p_minus(p):
+  '''
+  minus : MINUS
+        | empty
+  '''
+  global operators
+  global negativeflag
+  if p[1] == '-':
+    operators.append('-')
+    negativeflag = 1
+  p[0] = p[1]
 
 # Loop Cycle
 def p_loop_value(p):
@@ -519,6 +559,31 @@ def p_appendEqual(p):
   global operators
   operators.append('=')
   p[0] = p[1]
+
+def p_punt_negation(p):
+  '''
+  punt_negation : empty
+  '''
+  
+  global variables
+  global operators
+  global quadCont
+  global quadruples
+  if len(operators) > 0:
+    if operators[-1] == '!':
+      operator = operators.pop()
+      operand = variables.pop()
+      operand2 = None
+      result = valid_operation(operator, operand, operand2)
+      if result == -1:
+        print("Error: Operación inválida")
+      else:
+        quadruples.append(Quad(operator,operand,operand2,result))
+        variables.append(result)
+        quadCont += 1
+  p[0] = p[1]
+
+
 
 def p_puntLogical(p):
   '''
@@ -923,7 +988,9 @@ def calc_new_direction(type):
   
 # Get the type of data using its direction
 def get_type_by_direction(dir):
-  if (dir >= 100000 and dir <= 101999) or (dir >= 110000 and dir <= 111999) or (dir >= 200000 and dir <= 201999) or (dir >= 210000 and dir <= 211999) or (dir >= 300000 and dir <= 301999):
+  if dir == None:
+    return None
+  elif (dir >= 100000 and dir <= 101999) or (dir >= 110000 and dir <= 111999) or (dir >= 200000 and dir <= 201999) or (dir >= 210000 and dir <= 211999) or (dir >= 300000 and dir <= 301999):
     return 'int'
   elif (dir >= 102000 and dir <= 103999) or (dir >= 112000 and dir <= 113999) or (dir >= 202000 and dir <= 203999) or (dir >= 212000 and dir <= 213999) or (dir >= 302000 and dir <= 303999):
     return 'flo'
