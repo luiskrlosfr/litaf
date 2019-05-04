@@ -111,7 +111,6 @@ def p_assign(p):
 def p_function_A(p): # Parameters for declaring functions
   '''
   function_A : type ID function_A1
-             | empty
   '''
   global actualScope
   global scopeTable
@@ -123,7 +122,7 @@ def p_function_A(p): # Parameters for declaring functions
   p[0]
 def p_function_A1(p): # Call for multiple parameters
   '''
-  function_A1 : COMMA type ID function_A1
+  function_A1 : COMMA function_A
               | empty
   '''
   if len(p) > 2:

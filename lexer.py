@@ -33,7 +33,8 @@ tokens = [
   'COMMENT',              # Comments
   'DOT',                     # Assignation and Calls
   'COMMA',
-  'DOUBLE_DOT'
+  'DOUBLE_DOT',
+  'AT'
 ]
 
 # Tokens of Reserved Words
@@ -81,7 +82,6 @@ reserved = {
 }
 
 # Define simple terminal tokens
-
 t_AND = r'\&\&'
 t_OR = r'\|\|'
 t_EQUAL_EQUAL = r'\=\='
