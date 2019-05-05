@@ -129,12 +129,13 @@ def p_function_C(p): # Statements inside function
 # Function Call
 def p_function_call(p):
   '''
-  function_call : function_call_name OPEN_PARENTHESIS  function_call_A CLOSE_PARENTHESIS punt_function_call_end
+  function_call : function_call_name punt_validate_void OPEN_PARENTHESIS  function_call_A CLOSE_PARENTHESIS punt_function_call_end
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 def p_function_call_A(p): # Parameters for function call
   '''
   function_call_A : function_call_hyper_exp function_call_A1
@@ -169,6 +170,7 @@ def p_block(p):
         | condition
         | lecture
         | writing
+        | punt_flag_block function_call punt_flag_block
         | COMMENT
   '''
   p[0] = p[1]
@@ -709,6 +711,6 @@ with open(name, 'r') as myfile:
   line = myfile.read()
   result = parser.parse(line)
 
-# for quad in quadruples:
+#for quad in quadruples:
 #   print(quad.print())
 
