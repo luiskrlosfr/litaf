@@ -81,7 +81,6 @@ reserved = {
 }
 
 # Define simple terminal tokens
-
 t_AND = r'\&\&'
 t_OR = r'\|\|'
 t_EQUAL_EQUAL = r'\=\='
