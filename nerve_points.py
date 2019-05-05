@@ -423,9 +423,8 @@ def p_bool_values_cycle(p):
   global quadCont
   global variables
   global tempCont
-  global actual_value
   up = variables.pop()
-  low = actual_value
+  low = scopeTable.scopes['constants'][1].vars[p[1]][1]
   operator = "=="
   result = valid_operation(operator, low, up)
   if result == -1:
@@ -679,7 +678,7 @@ def p_puntIF(p):
   global variables
   global quadCont
   global jumps
-  quadruples.append(Quad('GoToF', variables.pop(), None, None))
+  quadruples.append(Quad('GoToF', None, variables.pop(), None))
   jumps.append(quadCont)
   quadCont += 1
   p[0] = p[1]
@@ -773,7 +772,7 @@ def p_puntUntil(p):
   global quadCont
   global jumps
   result = variables.pop()
-  quadruples.append(Quad('GoToF', result, None, None))
+  quadruples.append(Quad('GoToF', None, result, None))
   jumps.append(quadCont)
   quadCont += 1
   p[0] = p[1]
@@ -851,7 +850,12 @@ def p_puntSetMemory(p):
   global memory
   constants = scopeTable.scopes['constants'][1].vars
   for con in constants:
-    memory[constants[con][1]] = con
+    if con == 'false':
+      memory[constants['false'][1]] = False
+    elif con == 'true':
+      memory[constants['true'][1]] = True
+    else:
+      memory[constants[con][1]] = con
   p[0] = p[1]
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                                 Functions
