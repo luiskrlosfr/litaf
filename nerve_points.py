@@ -911,7 +911,8 @@ def p_punt_function_call_end(p):
   global operators
   global actualScope
   global recursiveCalls
-  operators.pop()
+  if len(operators) > 0:
+    operators.pop()
   dir = scopeTable.scopes[funcName][2]
   quadruples.append(Quad('GoSub', None, None, dir))
   quadCont += 1
