@@ -4,10 +4,10 @@ class VarTable:
 
   def push(self, varName, varType, varDir):
     self.vars[varName] = [varType, varDir]
-
+  
 class ScopeTable:
   def __init__(self):
     self.scopes = {}
 
-  def push(self, scopeName, scopeType, varTable):
-    self.scopes[scopeName] = [scopeType, varTable]
+  def push(self, scopeName, scopeType, varTable, dir, returnVal):
+    self.scopes[scopeName] = [scopeType, varTable, dir, returnVal]
