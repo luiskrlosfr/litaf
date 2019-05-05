@@ -60,7 +60,7 @@ def p_punt_start_litaf(p):
   '''
   global quadCont
   global quadruples
-  create_scope('constants', 'void')
+  create_scope('constants', 'void',quadCont)
   quadruples.append(Quad('GoTo',None,None,None))
   quadCont += 1
   p[0] = p[1]
@@ -145,10 +145,6 @@ def p_function_A1(p): # Call for multiple parameters
   function_A1 : COMMA function_A
               | empty
   '''
-  if len(p) > 2:
-    global actualScope
-    global scopeTable
-    insert_var(p[3], p[2], actualScope)
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -185,8 +181,14 @@ def p_function_D(p): # Return value for function
   global quadruples
   global quadCont
   global funcType
+  result = variables.pop()
+  result_type = get_type_by_direction(result)
   if funcType != 'void':
-    quadruples.append(Quad('return',None,None,variables.pop()))
+    if funcType == result_type:
+      quadruples.append(Quad('return',None,None,result))
+      scopeTable.scopes[actualScope][3] = result
+    else:
+      print("Error type mismatch")
   else:
     quadruples.append(Quad('return',None,None,None))
   quadCont += 1
@@ -209,14 +211,31 @@ def p_function_call_name(p):
   quadruples.append(Quad('ERA', None, None, funcName))
   quadCont += 1
   p[0] = p[1]
+
+def p_punt_false_bottom_function(p):
+  '''
+  punt_false_bottom_function : empty
+  '''
+  global operators
+  operators.append('(')
+  p[0] = p[1]
+
+def p_pop_false_bottom_function(p):
+  '''
+  pop_false_bottom_function : empty
+  '''
+  global operators
+  operators.pop()
+  p[0] = p[1]
 def p_function_call_hyper_exp(p):
   '''
-  function_call_hyper_exp : hyper_exp
+  function_call_hyper_exp : punt_false_bottom_function hyper_exp
   '''
   global quadCont
   global contParams
   global quadruples
   global variables
+  global operators
   contParams += 1
   quadruples.append(Quad('PARAM', None, variables.pop(), 'param'+str(contParams)))
   quadCont += 1
@@ -495,7 +514,7 @@ def p_createGlobal(p):
   global scopeTable
   global actualScope
   actualScope = 'global'
-  create_scope("global", "void")
+  create_scope("global", "void",None)
   p[0] = p[1]
 
 # Creates Scope for Function
@@ -503,8 +522,9 @@ def p_getFunId(p):
   '''
   getFunId : FUNCTION_ID
   '''
+  global quadCont
   reset_locals()
-  create_scope(p[1], None)
+  create_scope(p[1], None, quadCont)
   p[0] = p[1]
 
 # Creates Scope for Class
@@ -512,7 +532,8 @@ def p_getClassId(p):
   '''
   getClassId : CLASS_ID
   '''
-  create_scope(p[1], "class")
+  global quadCont
+  create_scope(p[1], "class", quadCont)
   p[0] = p[1]
 
 # Creates Scope for Main
@@ -520,7 +541,8 @@ def p_setMain(p):
   '''
   setMain : empty
   '''
-  create_scope("main", "int")
+  global quadCont
+  create_scope("main", "int", quadCont)
   p[0] = p[1]
 
 # Generate Quadruple Sum and Difference
@@ -837,7 +859,15 @@ def p_punt_function_call_end(p):
   global quadruples
   global quadCont
   global funcName
-  quadruples.append(Quad('GoSub', None, None, funcName))
+  global scopeTable
+  global variables
+  global operators
+  operators.pop()
+  dir = scopeTable.scopes[funcName][2]
+  quadruples.append(Quad('GoSub', None, None, dir))
+  if scopeTable.scopes[funcName][0] != 'void':
+    returnval = scopeTable.scopes[funcName][3]
+    variables.append(returnval)
   quadCont += 1
   p[0] = p[1]
 
@@ -877,15 +907,14 @@ def insert_constant(var, typ):
     scopeTable.scopes['constants'][1].push(var, typ, dir)
 
 # Function for setting actual scope
-def create_scope(scope, typ):
+def create_scope(scope, typ, quadCont):
   global scopeTable
   global actualScope
   actualScope = scope
   if actualScope in scopeTable.scopes:
     print("Error: Función '{}' ya existe".format(actualScope))
   else:
-    scopeTable.push(scope, typ, VarTable())
-
+    scopeTable.push(scope, typ, VarTable(), quadCont,None)
 # Function for resetting local directions
 def reset_locals():
   global loc_int
@@ -1061,6 +1090,7 @@ def calc_new_direction(type, operator):
   
 # Get the type of data using its direction
 def get_type_by_direction(dir):
+  print(dir)
   if dir == None:
     return None
   elif (dir >= 100000 and dir <= 101999) or (dir >= 110000 and dir <= 111999) or (dir >= 200000 and dir <= 201999) or (dir >= 210000 and dir <= 211999) or (dir >= 300000 and dir <= 301999):
