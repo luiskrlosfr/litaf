@@ -1,7 +1,8 @@
 import ply.yacc as yacc
+import sys
 from quad import Quad
 from vartable import VarTable, ScopeTable
-from lexer import tokens
+from lexer import tokens, lexer
 from collections import deque
 from semcube import Semcube
 scopeTable = ScopeTable()
@@ -23,7 +24,7 @@ conditions = []
 patrons = []
 funcType = ''
 cube = Semcube()
-#---------------------------Variables MEMORIAS-------------------------------
+#---------------------------VARIABLES MEMORIAS-------------------------------
 loc_int = 100000
 loc_flo = 102000
 loc_str = 104000
@@ -49,7 +50,7 @@ con_flo = 302000
 con_str = 304000
 con_cha = 306000
 con_boo = 308000
-
+memory = {}
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                        Syntax Rules with Nerve Points
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -60,7 +61,7 @@ def p_punt_start_litaf(p):
   '''
   global quadCont
   global quadruples
-  create_scope('constants', 'void',quadCont)
+  create_scope('constants', 'void', quadCont, p)
   quadruples.append(Quad('GoTo',None,None,None))
   quadCont += 1
   p[0] = p[1]
@@ -78,12 +79,18 @@ def p_punt_Go_main(p):
 # Declaration
 def p_declaration_A(p):
   '''
-  declaration_A : ID declaration_A1
+  declaration_A : declarationID declaration_A1
+  '''
+  p[0] = p[1] + p[2]
+
+def p_declarationID(p):
+  '''
+  declarationID : ID
   '''
   global actualType
   global actualScope
-  insert_var(p[1], actualType, actualScope)
-  p[0] = p[1] + p[2]
+  insert_var(p[1], actualType, actualScope, p)
+  p[0] = p[1]
 
 #Negation
 def p_negation(p):
@@ -105,15 +112,18 @@ def p_assign(p):
   global quadruples
   global variables
   global quadCont
+  global actual_value
   operator = operators.pop()
   operand2 = variables.pop()
-  operand1 = scopeTable.scopes[actualScope][1].vars[p[1]][1]
-  result = valid_operation(operator, operand1, operand2)
-  if result == -1:
-    print("Error: Operación inválida")
-  else:
-    quadruples.append(Quad(operator, None, operand2, operand1))
-    quadCont += 1
+  if check_if_exist(p[1]):
+    operand1 = actual_value
+    result = valid_operation(operator, operand1, operand2)
+    if result == -1:
+      print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+      sys.exit(0)
+    else:
+      quadruples.append(Quad(operator, None, operand2, operand1))
+      quadCont += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -127,7 +137,7 @@ def p_function_A(p): # Parameters for declaring functions
   global actualScope
   global scopeTable
   if len(p) > 2:
-    insert_var(p[2], p[1], actualScope)
+    insert_var(p[2], p[1], actualScope, p)
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -180,7 +190,8 @@ def p_function_D(p): # Return value for function
       quadruples.append(Quad('return',None,None,result))
       scopeTable.scopes[actualScope][3] = result
     else:
-      print("Error type mismatch")
+      print("Error en línea {}: tipos no coinciden".format(p.lexer.lineno - 1))
+      sys.exit(0)
   else:
     quadruples.append(Quad('return',None,None,None))
   quadCont += 1
@@ -299,7 +310,8 @@ def p_factor(p):
         var1 = variables.pop()
         result = valid_operation(oper, var1, var1)
         if result == -1:
-          print("Error: Operación inválida")
+          print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+          sys.exit(0)
         else:
           quadruples.append(Quad(oper,var1,0,result))
           variables.append(result)
@@ -339,13 +351,14 @@ def p_loop_value(p):
   operator = conditions.pop()
   result = valid_operation(operator, low, up)
   if result == -1:
-    print("Error: Operación inválida")
+    print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+    sys.exit(0)
   else:
     quadruples.append(Quad(operator, up, low, result))
     quadCont += 1
     variables.append(result)
     jumps.append(quadCont)
-    quadruples.append(Quad('GoToF', variables.pop(), None, None))
+    quadruples.append(Quad('GoToF', None, variables.pop(), None))
     quadCont += 1
   p[0] = p[1]
 def p_patron(p):
@@ -364,7 +377,8 @@ def p_patron(p):
   operator = patrons.pop()
   result = valid_operation(operator, low, up)
   if result == -1:
-    print("Error: Operación inválida")
+    print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+    sys.exit(0)
   else:
     quadruples.append(Quad(operator, up, low, result))
     variables.append(result)
@@ -434,20 +448,23 @@ def p_bool_values_cycle(p):
   global quadCont
   global variables
   global tempCont
-  global actual_value
   up = variables.pop()
-  low = actual_value
+  low = scopeTable.scopes['constants'][1].vars[p[1]][1]
   operator = "=="
   result = valid_operation(operator, low, up)
   if result == -1:
-    print("Error: Operación inválida")
+    print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+    sys.exit(0)
   else:
     quadruples.append(Quad(operator, up, low, result))
     variables.append(result)
     quadCont += 1
   p[0] = p[1]
 
-# Constants
+#--------------
+#   Constants
+#-------------
+# Insert into Constant table an INT constant
 def p_int_const(p):
   '''
   int_const : INT_CONST
@@ -455,6 +472,8 @@ def p_int_const(p):
   if not check_if_exist(p[1]):
     insert_constant(p[1], 'int')
   p[0] = p[1]
+
+# Insert into Constant table a CHA constant
 def p_char_const(p):
   '''
   char_const : CHAR_CONST
@@ -463,6 +482,7 @@ def p_char_const(p):
     insert_constant(p[1], 'cha')
   p[0] = p[1]
 
+# Insert into Constant table a FLO constant
 def p_float_const(p):
   '''
   float_const : FLOAT_CONST
@@ -471,6 +491,7 @@ def p_float_const(p):
     insert_constant(p[1], 'flo')
   p[0] = p[1]
 
+# Insert into Constant table a STR constant
 def p_string_const(p):
   '''
   string_const : STRING_CONST
@@ -479,7 +500,7 @@ def p_string_const(p):
     insert_constant(p[1], 'str')
   p[0] = p[1]
 
-# Bool Values
+# Insert into Constant table a BOO constant
 def p_bool_values(p):
   '''
   bool_values : TRUE
@@ -500,35 +521,38 @@ def p_createGlobal(p):
   global scopeTable
   global actualScope
   actualScope = 'global'
-  create_scope("global", "void",None)
+  create_scope("global", "void", None, p)
   p[0] = p[1]
 
-# Get Scope of Function
+# Creates Scope for Function
 def p_getFunId(p):
   '''
   getFunId : FUNCTION_ID
   '''
   global quadCont
   reset_locals()
-  create_scope(p[1], None, quadCont)
+  create_scope(p[1], None, quadCont, p)
   p[0] = p[1]
 
+# Creates Scope for Class
 def p_getClassId(p):
   '''
   getClassId : CLASS_ID
   '''
   global quadCont
-  create_scope(p[1], "class", quadCont)
+  create_scope(p[1], "class", quadCont, p)
   p[0] = p[1]
-# Set Main scope
+
+# Creates Scope for Main
 def p_setMain(p):
   '''
   setMain : empty
   '''
   global quadCont
-  create_scope("main", "int", quadCont)
+  create_scope("main", "int", quadCont, p)
   p[0] = p[1]
 
+# Generate Quadruple Sum and Difference
 def p_puntSum(p):
   '''
   puntSum : empty
@@ -544,13 +568,15 @@ def p_puntSum(p):
       operand1 = variables.pop()
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
-        print("Error: Operación inválida")
+        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        sys.exit(0)
       else:
         quadruples.append(Quad(operator, operand2, operand1, result))
         variables.append(result)
         quadCont += 1
   p[0] = p[1]
-  
+
+# Generate Quadruple Multiplication and Division
 def p_puntMul(p):
   '''
   puntMul : empty
@@ -567,13 +593,15 @@ def p_puntMul(p):
       operand1 = variables.pop()
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
-        print("Error: Operación inválida")
+        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        sys.exit(0)
       else:
         quadruples.append(Quad(operator, operand2, operand1, result))
         variables.append(result)
         quadCont += 1
   p[0] = p[1]
 
+# Append '=' to Operators Stack
 def p_appendEqual(p):
   '''
   appendEqual : empty
@@ -598,7 +626,8 @@ def p_punt_negation(p):
       operand2 = None
       result = valid_operation(operator, operand, operand2)
       if result == -1:
-        print("Error: Operación inválida")
+        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        sys.exit(0)
       else:
         quadruples.append(Quad(operator,operand,operand2,result))
         variables.append(result)
@@ -623,12 +652,15 @@ def p_puntLogical(p):
       operand1 = variables.pop()
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
-        print("Error: Operación inválida")
+        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        sys.exit(0)
       else:
         quadruples.append(Quad(operator, operand2, operand1, result))
         variables.append(result)
         quadCont += 1
   p[0] = p[1]
+
+# Generate Quadruples AND/OR
 def p_puntAndOr(p):
   '''
   puntAndOr : empty
@@ -645,12 +677,15 @@ def p_puntAndOr(p):
       operand1 = variables.pop()
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
-        print("Error: Operación inválida")
+        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        sys.exit(0)
       else:
         quadruples.append(Quad(operator, operand2, operand1, result))
         variables.append(result)
         quadCont += 1
   p[0] = p[1]
+
+# Appends '(' to Operators Stack
 def p_puntOP(p):
   '''
   puntOP : empty
@@ -659,6 +694,7 @@ def p_puntOP(p):
   operators.append('(')
   p[0] = p[1]
 
+# Removes '(' from Operators Stack
 def p_puntCP(p):
   '''
   puntCP : empty
@@ -667,6 +703,7 @@ def p_puntCP(p):
   operators.pop()
   p[0] = p[1]
 
+# Generates incomplete Go-To-False Quadruple for IF
 def p_puntIF(p):
   '''
   puntIF : empty
@@ -675,11 +712,12 @@ def p_puntIF(p):
   global variables
   global quadCont
   global jumps
-  quadruples.append(Quad('GoToF', variables.pop(), None, None))
+  quadruples.append(Quad('GoToF', None, variables.pop(), None))
   jumps.append(quadCont)
   quadCont += 1
   p[0] = p[1]
 
+# Generates incomplete Go-To Quadruple for IF and completes its Go-To-False
 def p_puntElse(p):
   '''
   puntElse : empty
@@ -695,6 +733,7 @@ def p_puntElse(p):
   quadruples[false].result = quadCont
   p[0] = p[1]
 
+# Completes Go-To for IF
 def p_puntIfEnd(p):
   '''
   puntIfEnd : empty
@@ -706,6 +745,7 @@ def p_puntIfEnd(p):
   quadruples[end].result = quadCont
   p[0] = p[1]
 
+# Generates incomplete Go-To Quadruple for ELSIF and completes its Go-To-False
 def p_puntElseIfGOTO(p):
   '''
   puntElseIfGOTO : empty
@@ -721,6 +761,7 @@ def p_puntElseIfGOTO(p):
   quadruples[returning].result = quadCont
   p[0] = p[1]
 
+# Generates incomplete Go-To-False Quadruple for ELSIF
 def p_puntElseIfGoToF(p):
   '''
   puntElseIfGoToF : empty
@@ -734,6 +775,7 @@ def p_puntElseIfGoToF(p):
   quadCont += 1
   p[0] = p[1]
 
+# Completes Go-To for ELSIF
 def p_puntElseIfEnd(p):
   '''
   puntElseIfEnd : empty
@@ -744,6 +786,7 @@ def p_puntElseIfEnd(p):
   quadruples[returning].result = quadCont
   p[0] = p[1]
 
+# Appends to Jumps Stack the quadruple where the UNTIL Cycle condition starts
 def p_puntUntilJump(p):
   '''
   puntUntilJump : empty
@@ -753,6 +796,7 @@ def p_puntUntilJump(p):
   jumps.append(quadCont)
   p[0] = p[1]
 
+# Generates Incomplete Go-To-False Quadruple for UNTIL Cycle
 def p_puntUntil(p):
   '''
   puntUntil : empty
@@ -762,11 +806,12 @@ def p_puntUntil(p):
   global quadCont
   global jumps
   result = variables.pop()
-  quadruples.append(Quad('GoToF', result, None, None))
+  quadruples.append(Quad('GoToF', None, result, None))
   jumps.append(quadCont)
   quadCont += 1
   p[0] = p[1]
 
+# Generates incomplete Go-To Quadruple for UNNTIL Cycle and completes its Go-To-False
 def p_puntUntilEnd(p):
   '''
   puntUntilEnd : empty
@@ -780,6 +825,8 @@ def p_puntUntilEnd(p):
   returning = jumps.pop()                     # Pops QUAD for generating GOTO QUAD to re evaluation of the conditional exp of the cycle
   quadruples.append(Quad('GoTo', None, None, returning))
   p[0] = p[1]
+
+# Appends to Jumps Stack the quadruple where the LOOP Cycle condition starts and checks if Control v exists
 def p_puntLoopID(p):
   '''
   puntLoopID :  ID
@@ -795,9 +842,10 @@ def p_puntLoopID(p):
     ranges.append(actual_value)
     jumps.append(quadCont)
   else:
-    print("Error: variable '{}' sin definir".format(p[1]))
+    print("Error en línea {}: variable '{}' sin definir".format(p.lexer.lineno - 1, p[1]))
   p[0] = p[1]
 
+# Appends '<=' to Operator Stack
 def p_puntLoopUp(p):
   '''
   puntLoopUp : empty
@@ -805,6 +853,17 @@ def p_puntLoopUp(p):
   global conditions
   conditions.append('<=')
   p[0] = p[1]
+
+# Appends '>=' to Operator Stack
+def p_puntLoopDown(p):
+  '''
+  puntLoopDown : empty
+  '''
+  global conditions
+  conditions.append('>=')
+  p[0] = p[1]
+
+# Generates Go-Sub Quadruple for function call
 def p_punt_function_call_end(p):
   '''
   punt_function_call_end : empty
@@ -823,36 +882,49 @@ def p_punt_function_call_end(p):
     variables.append(returnval)
   quadCont += 1
   p[0] = p[1]
-def p_puntLoopDown(p):
+
+# Creates Constants Memory structure that is going to be used in Virtual Machine
+def p_puntSetMemory(p):
   '''
-  puntLoopDown : empty
+  puntSetMemory : empty
   '''
-  global conditions
-  conditions.append('>=')
+  global scopeTable
+  global memory
+  constants = scopeTable.scopes['constants'][1].vars
+  for con in constants:
+    if con == 'false':
+      memory[constants['false'][1]] = False
+    elif con == 'true':
+      memory[constants['true'][1]] = True
+    else:
+      memory[constants[con][1]] = con
   p[0] = p[1]
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                                 Functions
 #-------------------------------------------------------------------------------------------------------------------------------------------
 # Function for inserting variable in scope table
-def insert_var(var, typ, scope):
+def insert_var(var, typ, scope, p):
   global scopeTable
-  if var in scopeTable.scopes[scope][1].vars:
-    print("Error: Variable '{}' ya definida".format(var))
-  else:
+  if var not in scopeTable.scopes[scope][1].vars:
     dir = calc_dir(typ, scope)
     scopeTable.scopes[scope][1].push(var, typ, dir)
+  else:
+    print("Error en linea {}: variable '{}' ya definida".format(p.lexer.lineno - 1, var))
+    sys.exit(0) 
+
 # Function for inserting constant in constants table
 def insert_constant(var, typ):
   if var not in scopeTable.scopes['constants'][1].vars:
     dir = calc_dir(typ, 'constants')
     scopeTable.scopes['constants'][1].push(var, typ, dir)
+
 # Function for setting actual scope
-def create_scope(scope, typ, quadCont):
+def create_scope(scope, typ, quadCont, p):
   global scopeTable
   global actualScope
   actualScope = scope
   if actualScope in scopeTable.scopes:
-    print("Error: Función '{}' ya existe".format(actualScope))
+    print("Error en línea {}: función '{}' ya existe".format(p.lexer.lineno - 1, actualScope))
   else:
     scopeTable.push(scope, typ, VarTable(), quadCont,None)
 # Function for resetting local directions
@@ -874,6 +946,7 @@ def reset_locals():
   loc_tem_str = 114000
   loc_tem_cha = 116000 
 
+# Set memory direction for variable
 def calc_dir(typ, scope):
   dir = 0
   if scope == 'global':
@@ -941,6 +1014,7 @@ def calc_dir(typ, scope):
       loc_boo += 1
   return dir
 
+# Checks if value exists in any of the Tables (actualscope, global or constant)
 def check_if_exist(var):
   global scopeTable
   global actualScope
@@ -948,11 +1022,11 @@ def check_if_exist(var):
   if var in scopeTable.scopes[actualScope][1].vars:
     actual_value = scopeTable.scopes[actualScope][1].vars[var][1]
     return True
-  elif var in scopeTable.scopes['global'][1].vars:
-    actual_value = scopeTable.scopes['global'][1].vars[var][1]
-    return True
   elif var in scopeTable.scopes['constants'][1].vars:
     actual_value = scopeTable.scopes['constants'][1].vars[var][1]
+    return True
+  elif var in scopeTable.scopes['global'][1].vars:
+    actual_value = scopeTable.scopes['global'][1].vars[var][1]
     return True
   else:
     return False
@@ -966,59 +1040,68 @@ def valid_operation(oper, op1, op2):
   if result[0] == 'e' or result[0] == 'o':
     return -1
   else:
-    return calc_new_direction(result)
+    return calc_new_direction(result, oper)
 
 # Get the new direction
-def calc_new_direction(type):
+def calc_new_direction(type, operator):
   global actualScope
   dir = 0
   if actualScope != 'global':
     if type == 'int':
       global loc_tem_int
       dir = loc_tem_int
-      loc_tem_int += 1
+      if operator != '=':
+        loc_tem_int += 1
     elif type == 'flo':
       global loc_tem_flo
       dir = loc_tem_flo
-      loc_tem_flo += 1
+      if operator != '=':
+        loc_tem_flo += 1
     elif type == 'str':
       global loc_tem_str
       dir = loc_tem_str
-      loc_tem_str += 1
+      if operator != '=':
+        loc_tem_str += 1
     elif type == 'cha':
       global loc_tem_cha
       dir = loc_tem_cha
-      loc_tem_cha += 1
+      if operator != '=':
+        loc_tem_cha += 1
     elif type == 'boo':
       global loc_tem_boo
       dir = loc_tem_boo
-      loc_tem_boo += 1
+      if operator != '=':
+        loc_tem_boo += 1
   else:
     if type == 'int':
       global glo_tem_int
       dir = glo_tem_int
-      glo_tem_int += 1
+      if operator != '=':
+        glo_tem_int += 1
     elif type == 'flo':
       global glo_tem_flo
       dir = glo_tem_flo
-      glo_tem_flo += 1
+      if operator != '=':
+        glo_tem_flo += 1
     elif type == 'str':
       global glo_tem_str
       dir = glo_tem_str
-      glo_tem_str += 1
+      if operator != '=':
+        glo_tem_str += 1
     elif type == 'cha':
       global glo_tem_cha
       dir = glo_tem_cha
-      glo_tem_cha += 1
+      if operator != '=':
+        glo_tem_cha += 1
     elif type == 'boo':
       global glo_tem_boo
       dir = glo_tem_boo
-      glo_tem_boo += 1
+      if operator != '=':
+        glo_tem_boo += 1
   return dir
   
 # Get the type of data using its direction
 def get_type_by_direction(dir):
-  print(dir)
   if dir == None:
     return None
   elif (dir >= 100000 and dir <= 101999) or (dir >= 110000 and dir <= 111999) or (dir >= 200000 and dir <= 201999) or (dir >= 210000 and dir <= 211999) or (dir >= 300000 and dir <= 301999):

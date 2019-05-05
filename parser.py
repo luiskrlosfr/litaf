@@ -1,11 +1,12 @@
 # Parser for defining all grammar rules
 import ply.yacc as yacc
-from lexer import tokens
+import lexer
+from lexer import tokens, lexer
 from nerve_points import *
 # Start
 def p_start(p):
   '''
-  start : punt_start_litaf LITAF START DOUBLE_DOT classes global_vars functions main END
+  start : punt_start_litaf LITAF START DOUBLE_DOT classes global_vars functions main puntSetMemory END
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -26,13 +27,9 @@ def p_classes(p):
 # Global Vars
 def p_global_vars(p):
   '''
-  global_vars : createGlobal declarations global_vars_A
-              | empty
+  global_vars : createGlobal global_vars_A
   '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+  p[0] = p[1] + p[2]
 
 def p_global_vars_A(p):
   '''
@@ -705,18 +702,13 @@ parser = yacc.yacc()
 
 # Read file as an input and evaluate if the grammar is acceptable or not. Print a message if it finds an error
 # in the grammar.
-print("Teclea el nombre del archivo de texto")
+print("Teclea el nombre del archivo a compilar")
 name = input('parser >> ')
 
 with open(name, 'r') as myfile:
-  line = myfile.read().replace('\n', '')
+  line = myfile.read()
   result = parser.parse(line)
-  # print(result)
-# print(scopeTable.scopes)
-for scope in scopeTable.scopes.values():
-  print(scope[1].vars)
-cont = 0
-for quad in quadruples:
-  print(str(cont) + " ", end = '')
-  quad.print()
-  cont += 1
+
+# for quad in quadruples:
+#   print(quad.print())
+
