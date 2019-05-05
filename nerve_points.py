@@ -8,6 +8,7 @@ from semcube import Semcube
 scopeTable = ScopeTable()
 actualScope = 'global'
 actualType = 'void'
+block_flag = 0
 funcName = ''
 quadCont = 0
 contParams = 0
@@ -160,8 +161,6 @@ def p_function_B(p): # Type of return value (includes void)
   global scopeTable
   global actualType
   actualType = p[1]
-  if actualScope != 'global' or actualScope != 'constants':
-    scopeTable.scopes[actualScope][0] = p[1]
   p[0] = p[1]
 
 def p_function_type(p):
@@ -169,8 +168,11 @@ def p_function_type(p):
   function_type : type
                 | VOID  
   '''
+  global actualScope
+  global scopeTable
   global funcType
   funcType = p[1]
+  scopeTable.scopes[actualScope][0] = funcType
   p[0] = p[1]
 
 def p_function_D(p): # Return value for function
@@ -183,9 +185,9 @@ def p_function_D(p): # Return value for function
   global quadruples
   global quadCont
   global funcType
-  result = variables.pop()
-  result_type = get_type_by_direction(result)
   if funcType != 'void':
+    result = variables.pop()
+    result_type = get_type_by_direction(result)
     if funcType == result_type:
       quadruples.append(Quad('return',None,None,result))
       scopeTable.scopes[actualScope][3] = result
@@ -208,13 +210,16 @@ def p_function_call_name(p):
   function_call_name : FUNCTION_ID
   '''
   global quadruples
+  global scopeTable
   global funcName
+  global block_flag
   global quadCont
   funcName = p[1]
+  type = scopeTable.scopes[funcName][0]
   quadruples.append(Quad('ERA', None, None, funcName))
   quadCont += 1
   p[0] = p[1]
-
+#Agrega un false bottom para establecer los parametros de funciones
 def p_punt_false_bottom_function(p):
   '''
   punt_false_bottom_function : empty
@@ -230,6 +235,18 @@ def p_pop_false_bottom_function(p):
   global operators
   operators.pop()
   p[0] = p[1]
+
+def p_punt_validate_void(p):
+  '''
+  punt_validate_void : empty
+  '''
+  global block_flag
+  global funcName
+  global scopeTable
+  type = scopeTable.scopes[funcName][0]
+  if block_flag == 1 and type != 'void':
+    print("Error no es funcion void en bloque")
+    sys.exit(0)
 def p_function_call_hyper_exp(p):
   '''
   function_call_hyper_exp : punt_false_bottom_function hyper_exp
@@ -760,6 +777,20 @@ def p_puntElseIfGOTO(p):
   quadCont += 1
   quadruples[returning].result = quadCont
   p[0] = p[1]
+
+#raises a flag to allow void functions call in block
+def p_punt_flag_block(p):
+  '''
+  punt_flag_block : empty
+  '''
+  global block_flag
+  if block_flag == 0:
+    block_flag = 1
+  else:
+    block_flag = 0
+
+  p[0] = p[1]
+
 
 # Generates incomplete Go-To-False Quadruple for ELSIF
 def p_puntElseIfGoToF(p):
