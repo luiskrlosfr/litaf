@@ -57,7 +57,11 @@ def execute_quadruple(quad, ip):
 # Executes aritmetic operation according to operator
 def execute_aritmetic_operation(op, left, right, res_direction):
   global vm_memory
-  result =  arithmetic_operations[op](vm_memory.real_memory(left).get_value(left), vm_memory.real_memory(right).get_value(right))
+  global returnStack
+  global pointerStack
+  l = vm_memory.real_memory(left).get_value(left)
+  r = vm_memory.real_memory(right).get_value(right)
+  result =  arithmetic_operations[op](l, r)
   if not check_existence(res_direction):
     variable_in_memory(res_direction)
   vm_memory.real_memory(res_direction).set_value(res_direction, result)

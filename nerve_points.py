@@ -23,6 +23,7 @@ jumps = []
 ranges = []
 conditions = []
 patrons = []
+recursiveCalls = []
 funcType = ''
 cube = Semcube()
 #---------------------------VARIABLES MEMORIAS-------------------------------
@@ -185,6 +186,7 @@ def p_function_D(p): # Return value for function
   global quadruples
   global quadCont
   global funcType
+  global recursiveCalls
   if funcType != 'void':
     result = variables.pop()
     result_type = get_type_by_direction(result)
@@ -199,6 +201,8 @@ def p_function_D(p): # Return value for function
   quadCont += 1
   quadruples.append(Quad('EndProc',None,None,None))
   quadCont += 1
+  if len(recursiveCalls) > 0:
+    quadruples[recursiveCalls.pop()].op1 = scopeTable.scopes[actualScope][3]
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -245,7 +249,7 @@ def p_punt_validate_void(p):
   global scopeTable
   type = scopeTable.scopes[funcName][0]
   if block_flag == 1 and type != 'void':
-    print("Error no es funcion void en bloque")
+    print("Error en línea {}: función con valor de retorno sin asignar".format(p.lexer.lineno))
     sys.exit(0)
 def p_function_call_hyper_exp(p):
   '''
@@ -905,13 +909,22 @@ def p_punt_function_call_end(p):
   global scopeTable
   global variables
   global operators
+  global actualScope
+  global recursiveCalls
   operators.pop()
   dir = scopeTable.scopes[funcName][2]
   quadruples.append(Quad('GoSub', None, None, dir))
+  quadCont += 1
   if scopeTable.scopes[funcName][0] != 'void':
     returnval = scopeTable.scopes[funcName][3]
-    variables.append(returnval)
-  quadCont += 1
+    if funcName == actualScope:
+      direction = calc_new_direction(scopeTable.scopes[funcName][0], actualScope)
+      variables.append(direction)
+      quadruples.append(Quad('=', None, None, direction))
+      recursiveCalls.append(quadCont)
+      quadCont += 1
+    else:
+      variables.append(returnval)
   p[0] = p[1]
 
 # Creates Constants Memory structure that is going to be used in Virtual Machine
@@ -1066,9 +1079,6 @@ def check_if_exist(var):
 # Check if operation is valid between operands
 def valid_operation(oper, op1, op2):
   global cube
-  print(oper)
-  print(op1)
-  print(op2)
   var1 = get_type_by_direction(op1)
   var2 = get_type_by_direction(op2)
   result = cube.cube[var1][oper][var2]
