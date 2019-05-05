@@ -956,6 +956,7 @@ def create_scope(scope, typ, quadCont, p):
   actualScope = scope
   if actualScope in scopeTable.scopes:
     print("Error en línea {}: función '{}' ya existe".format(p.lexer.lineno - 1, actualScope))
+    sys.exit(0)
   else:
     scopeTable.push(scope, typ, VarTable(), quadCont,None)
 # Function for resetting local directions

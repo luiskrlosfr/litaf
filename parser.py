@@ -698,7 +698,8 @@ def p_empty(p):
 
 # Simple Error
 def p_error(p):
-  print("Grammar error, line {}".format(p.lexer.lineno))
+  print("Error en línea {}: eror en gramática".format(p.lexer.lineno))
+  sys.exit(0)
 # Build the parser
 parser = yacc.yacc()
 
