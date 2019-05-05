@@ -132,7 +132,7 @@ def p_function_C(p): # Statements inside function
 # Function Call
 def p_function_call(p):
   '''
-  function_call : function_call_name OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS punt_function_call_end
+  function_call : function_call_name OPEN_PARENTHESIS  function_call_A CLOSE_PARENTHESIS punt_function_call_end
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -149,7 +149,7 @@ def p_function_call_A(p): # Parameters for function call
   p[0]
 def p_function_call_A1(p):
   '''
-  function_call_A1 : COMMA function_call_hyper_exp function_call_A1
+  function_call_A1 : COMMA function_call_hyper_exp pop_false_bottom_function function_call_A1
                    | empty
   '''
   p[0] = ""
