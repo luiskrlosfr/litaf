@@ -1,6 +1,7 @@
 # Parser for defining all grammar rules
 import ply.yacc as yacc
-from lexer import tokens
+import lexer
+from lexer import tokens, lexer
 from nerve_points import *
 # Start
 def p_start(p):
@@ -705,7 +706,7 @@ print("Teclea el nombre del archivo a compilar")
 name = input('parser >> ')
 
 with open(name, 'r') as myfile:
-  line = myfile.read().replace('\n', '')
+  line = myfile.read()
   result = parser.parse(line)
 
 # for quad in quadruples:
