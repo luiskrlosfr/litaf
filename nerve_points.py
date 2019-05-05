@@ -294,7 +294,7 @@ def p_loop_value(p):
     quadCont += 1
     variables.append(result)
     jumps.append(quadCont)
-    quadruples.append(Quad('GoToF', variables.pop(), None, None))
+    quadruples.append(Quad('GoToF', None, variables.pop(), None))
     quadCont += 1
   p[0] = p[1]
 def p_patron(p):
