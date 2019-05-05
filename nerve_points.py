@@ -1066,6 +1066,9 @@ def check_if_exist(var):
 # Check if operation is valid between operands
 def valid_operation(oper, op1, op2):
   global cube
+  print(oper)
+  print(op1)
+  print(op2)
   var1 = get_type_by_direction(op1)
   var2 = get_type_by_direction(op2)
   result = cube.cube[var1][oper][var2]

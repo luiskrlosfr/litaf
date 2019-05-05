@@ -18,6 +18,20 @@ class VirtualMemory:
   def get_value(self, dir):
     return self.vars[dir - self.offset]
 
+  def base_dir_by_type(self, dir):
+    if 110000 <= dir and dir < 200000:
+      return dir - 10000
+    else:
+      return dir
+
+  def get_dir_as_local(self, dir):
+    if 100000 <= dir and dir < 200000:
+      return dir
+    elif 200000 <= dir and dir < 300000:
+      return dir - 100000
+    elif 300000 <= dir:
+      return dir - 200000
+
 # Class that has all types of Virtual Memories
 class Memories:
   def __init__(self, base_dir):
