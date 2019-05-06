@@ -3,6 +3,9 @@ from virtual_memory import BigMemory, Memory
 import operator
 
 memoryStack = []
+pointerStack = []
+returnStack = []
+params = []
 vm_memory = BigMemory()
 # actualMemory = Memory(100000, 110000)
 # Memory(300000, 310000)
@@ -14,6 +17,7 @@ logical_operations = { '==' : operator.eq,  '!=' : operator.ne, '>=' : operator.
 
 def execute_quadruple(quad, ip):
   global memoryStack
+  global pointerStack
   global vm_memory
   instruction = quad.operator
   pointer = ip
@@ -22,10 +26,24 @@ def execute_quadruple(quad, ip):
   elif instruction == 'GoToF':
     return evaluate_goto_false(pointer, quad)
   elif instruction == 'ERA':
+    # memoryStack.append(vm_memory.locals)
+    # create_local_memory()
+    global params
+    params = []
+  elif instruction == 'PARAM':
+    insert_params(quad)
+  elif instruction == 'GoSub':
+    pointerStack.append(pointer)
     memoryStack.append(vm_memory.locals)
     create_local_memory()
-  elif instruction == 'GoSub':
-    vm_memory.set_local(memoryStack.pop())
+    fill_params()
+    return quad.result
+  elif instruction == 'return':
+    return_value(quad)
+  elif instruction == 'EndProc':
+    pointer = pointerStack.pop()
+  elif instruction == 'SetReturnValue':
+    assign_return_value(quad.result)
   elif instruction == '+' or instruction == '-' or instruction == '*' or instruction == '/':
     execute_aritmetic_operation(instruction, quad.op1, quad.op2, quad.result)
   elif instruction == '==' or instruction == '!=' or instruction == '>=' or instruction == '>' or instruction == '<=' or instruction == '<':
@@ -40,7 +58,11 @@ def execute_quadruple(quad, ip):
 # Executes aritmetic operation according to operator
 def execute_aritmetic_operation(op, left, right, res_direction):
   global vm_memory
-  result =  arithmetic_operations[op](vm_memory.real_memory(left).get_value(left), vm_memory.real_memory(right).get_value(right))
+  global returnStack
+  global pointerStack
+  l = vm_memory.real_memory(left).get_value(left)
+  r = vm_memory.real_memory(right).get_value(right)
+  result =  arithmetic_operations[op](l, r)
   if not check_existence(res_direction):
     variable_in_memory(res_direction)
   vm_memory.real_memory(res_direction).set_value(res_direction, result)
@@ -95,6 +117,46 @@ def check_existence(direction):
   else:
     return True
 
+# Appends returned value to stack if function is not void and changes actual local memory to top of memory stack
+def return_value(quad):
+  global vm_memory
+  global memoryStack
+  global returnStack
+  if quad.result != None:
+    return_val = vm_memory.real_memory(quad.result).get_value(quad.result)
+    returnStack.append(return_val)
+  vm_memory.set_local(memoryStack.pop())
+
+# If function had return value, assigns it to corresponding temporal in actual local memory
+def assign_return_value(direction):
+  global returnStack
+  global quadruples
+  global vm_memory
+  if len(returnStack) > 0 :
+    value = returnStack.pop()
+    if not check_existence(direction):
+      variable_in_memory(direction)
+    vm_memory.real_memory(direction).set_value(direction, value)
+
+# Inserts param real value into array so the new function can set values to its variables
+def insert_params(quad):
+  global params
+  global vm_memory
+  direction = quad.op1
+  params.append(direction)
+  params.append(vm_memory.real_memory(direction).get_value(direction))
+
+# Creates local variables from function parameters
+def fill_params():
+  global vm_memory
+  global params
+  params.reverse()
+  while len(params) > 0:
+    direction = params.pop()
+    value = params.pop()
+    no_temporal = vm_memory.real_memory(direction).base_dir_by_type(direction)
+    local_dir = vm_memory.real_memory(no_temporal).get_dir_as_local(no_temporal)
+    vm_memory.real_memory(local_dir).push(value)
 
 pointer = 0
 if len(memory) > 0:

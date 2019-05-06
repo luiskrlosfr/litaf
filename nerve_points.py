@@ -23,6 +23,7 @@ jumps = []
 ranges = []
 conditions = []
 patrons = []
+recursiveCalls = []
 funcType = ''
 cube = Semcube()
 #---------------------------VARIABLES MEMORIAS-------------------------------
@@ -114,8 +115,8 @@ def p_assign(p):
   global variables
   global quadCont
   global actual_value
-  operator = operators.pop()
-  operand2 = variables.pop()
+  operator = pop_from_operators(p)
+  operand2 = pop_from_variables(p)
   if check_if_exist(p[1]):
     operand1 = actual_value
     result = valid_operation(operator, operand1, operand2)
@@ -186,7 +187,7 @@ def p_function_D(p): # Return value for function
   global quadCont
   global funcType
   if funcType != 'void':
-    result = variables.pop()
+    result = pop_from_variables(p)
     result_type = get_type_by_direction(result)
     if funcType == result_type:
       quadruples.append(Quad('return',None,None,result))
@@ -209,6 +210,7 @@ def p_function_call_name(p):
   '''
   function_call_name : FUNCTION_ID
   '''
+  global funcName
   global quadruples
   global scopeTable
   global funcName
@@ -245,8 +247,10 @@ def p_punt_validate_void(p):
   global scopeTable
   type = scopeTable.scopes[funcName][0]
   if block_flag == 1 and type != 'void':
-    print("Error no es funcion void en bloque")
+    print("Error en línea {}: función con valor de retorno sin asignar".format(p.lexer.lineno))
     sys.exit(0)
+  p[0] = p[1]
+
 def p_function_call_hyper_exp(p):
   '''
   function_call_hyper_exp : punt_false_bottom_function hyper_exp
@@ -257,7 +261,8 @@ def p_function_call_hyper_exp(p):
   global variables
   global operators
   contParams += 1
-  quadruples.append(Quad('PARAM', None, variables.pop(), 'param'+str(contParams)))
+  param = pop_from_variables(p)
+  quadruples.append(Quad('PARAM', None, param, 'param'+str(contParams)))
   quadCont += 1
   p[0] = p[1]
 
@@ -323,8 +328,8 @@ def p_factor(p):
     variables.append(actual_value)
     if len(operators) > 0:
       if operators[-1] == '-' and negativeflag ==1:
-        oper = operators.pop()
-        var1 = variables.pop()
+        oper = pop_from_operators(p)
+        var1 = pop_from_variables(p)
         result = valid_operation(oper, var1, var1)
         if result == -1:
           print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -363,7 +368,7 @@ def p_loop_value(p):
   global quadCont
   global jumps
   global ranges
-  up = variables.pop()
+  up = pop_from_variables(p)
   low = ranges[-1]
   operator = conditions.pop()
   result = valid_operation(operator, low, up)
@@ -375,7 +380,8 @@ def p_loop_value(p):
     quadCont += 1
     variables.append(result)
     jumps.append(quadCont)
-    quadruples.append(Quad('GoToF', None, variables.pop(), None))
+    bool = pop_from_variables(p)
+    quadruples.append(Quad('GoToF', None, bool, None))
     quadCont += 1
   p[0] = p[1]
 def p_patron(p):
@@ -389,9 +395,9 @@ def p_patron(p):
   global patrons
   global tempCont
   global scopeTable
-  up = variables.pop()
+  up = pop_from_variables(p)
   low = ranges[-1]
-  operator = patrons.pop()
+  operator = pop_from_patrons(p)
   result = valid_operation(operator, low, up)
   if result == -1:
     print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -400,7 +406,9 @@ def p_patron(p):
     quadruples.append(Quad(operator, up, low, result))
     variables.append(result)
     quadCont += 1
-    quadruples.append(Quad('=', None, variables.pop(), ranges.pop()))
+    value = pop_from_variables(p)
+    control_var = pop_from_ranges(p)
+    quadruples.append(Quad('=', None, value, control_var))
     quadCont += 1
     returning = jumps.pop()
     goto = jumps.pop()
@@ -444,7 +452,7 @@ def p_writing_A(p):
   global quadruples
   global variables
   global quadCont
-  message = variables.pop()
+  message = pop_from_variables(p)
   quadruples.append(Quad('Writing', None, None, message))
   quadCont += 1
   p[0] = ""
@@ -465,7 +473,7 @@ def p_bool_values_cycle(p):
   global quadCont
   global variables
   global tempCont
-  up = variables.pop()
+  up = pop_from_variables(p)
   low = scopeTable.scopes['constants'][1].vars[p[1]][1]
   operator = "=="
   result = valid_operation(operator, low, up)
@@ -580,9 +588,9 @@ def p_puntSum(p):
   global variables
   if len(operators) > 0:
     if operators[-1] == '+' or operators[-1] == '-':
-      operator = operators.pop()
-      operand2 = variables.pop()
-      operand1 = variables.pop()
+      operator = pop_from_operators(p)
+      operand2 = pop_from_variables(p)
+      operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
         print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -605,9 +613,9 @@ def p_puntMul(p):
   global tempCont
   if len(operators) > 0:
     if operators[-1] == '*' or operators[-1] == '/':   
-      operator = operators.pop()
-      operand2 = variables.pop()
-      operand1 = variables.pop()
+      operator = pop_from_operators(p)
+      operand2 = pop_from_variables(p)
+      operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
         print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -638,8 +646,8 @@ def p_punt_negation(p):
   global quadruples
   if len(operators) > 0:
     if operators[-1] == '!':
-      operator = operators.pop()
-      operand = variables.pop()
+      operator = pop_from_operators(p)
+      operand = pop_from_variables(p)
       operand2 = None
       result = valid_operation(operator, operand, operand2)
       if result == -1:
@@ -664,9 +672,9 @@ def p_puntLogical(p):
   global tempCont
   if len(operators) > 0:
     if operators[-1] == '>' or operators[-1] == '<' or operators[-1] == '>=' or operators[-1] == '<=' or operators[-1] == '==' or operators[-1] == '!=':   
-      operator = operators.pop()
-      operand2 = variables.pop()
-      operand1 = variables.pop()
+      operator = pop_from_operators(p)
+      operand2 = pop_from_variables(p)
+      operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
         print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -689,9 +697,9 @@ def p_puntAndOr(p):
   global tempCont
   if len(operators) > 0:
     if operators[-1] == '||' or operators[-1] == '&&':   
-      operator = operators.pop()
-      operand2 = variables.pop()
-      operand1 = variables.pop()
+      operator = pop_from_operators(p)
+      operand2 = pop_from_variables(p)
+      operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
         print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -729,7 +737,8 @@ def p_puntIF(p):
   global variables
   global quadCont
   global jumps
-  quadruples.append(Quad('GoToF', None, variables.pop(), None))
+  bool = pop_from_variables(p)
+  quadruples.append(Quad('GoToF', None, bool, None))
   jumps.append(quadCont)
   quadCont += 1
   p[0] = p[1]
@@ -778,7 +787,7 @@ def p_puntElseIfGOTO(p):
   quadruples[returning].result = quadCont
   p[0] = p[1]
 
-#raises a flag to allow void functions call in block
+# Raises a flag to allow void functions call in block
 def p_punt_flag_block(p):
   '''
   punt_flag_block : empty
@@ -788,7 +797,6 @@ def p_punt_flag_block(p):
     block_flag = 1
   else:
     block_flag = 0
-
   p[0] = p[1]
 
 
@@ -802,7 +810,8 @@ def p_puntElseIfGoToF(p):
   global quadCont
   global jumps
   jumps.append(quadCont)
-  quadruples.append(Quad('GoToF',None, variables.pop(), None))
+  bool = pop_from_variables(p)
+  quadruples.append(Quad('GoToF',None, bool, None))
   quadCont += 1
   p[0] = p[1]
 
@@ -836,7 +845,7 @@ def p_puntUntil(p):
   global quadruples
   global quadCont
   global jumps
-  result = variables.pop()
+  result = pop_from_variables(p)
   quadruples.append(Quad('GoToF', None, result, None))
   jumps.append(quadCont)
   quadCont += 1
@@ -905,13 +914,26 @@ def p_punt_function_call_end(p):
   global scopeTable
   global variables
   global operators
-  operators.pop()
+  global actualScope
+  global recursiveCalls
+  if len(operators) > 0:
+    operators.pop()
   dir = scopeTable.scopes[funcName][2]
   quadruples.append(Quad('GoSub', None, None, dir))
+  quadCont += 1
   if scopeTable.scopes[funcName][0] != 'void':
     returnval = scopeTable.scopes[funcName][3]
-    variables.append(returnval)
-  quadCont += 1
+    if funcName == actualScope:
+      direction = calc_new_direction(scopeTable.scopes[funcName][0], actualScope)
+      variables.append(direction)
+      quadruples.append(Quad('SetReturnValue', None, None, direction))
+      recursiveCalls.append(quadCont)
+      quadCont += 1
+    else:
+      direction = calc_new_direction(scopeTable.scopes[actualScope][0], actualScope)
+      quadruples.append(Quad('SetReturnValue', None, None, direction))
+      variables.append(direction)
+      quadCont += 1
   p[0] = p[1]
 
 # Creates Constants Memory structure that is going to be used in Virtual Machine
@@ -956,8 +978,46 @@ def create_scope(scope, typ, quadCont, p):
   actualScope = scope
   if actualScope in scopeTable.scopes:
     print("Error en línea {}: función '{}' ya existe".format(p.lexer.lineno - 1, actualScope))
+    sys.exit(0)
   else:
     scopeTable.push(scope, typ, VarTable(), quadCont,None)
+
+# Function for poping from Variables Stack, stops program if empty
+def pop_from_variables(p):
+  global variables
+  if not variables:
+    print("Error en línea {}: variable utilizada sin declarar".format(p.lexer.lineno - 1))
+    sys.exit(0)
+  else:
+    return variables.pop()
+
+# Function for poping from Operators Stack, stops program if empty
+def pop_from_operators(p):
+  global operators
+  if not operators:
+    print("Error en línea {}: operador faltante en expresión".format(p.lexer.lineno - 1))
+    sys.exit(0)
+  else:
+    return operators.pop()
+
+# Function for poping from Patrons Stack, stops program if empty
+def pop_from_patrons(p):
+  global patrons
+  if not patrons:
+    print("Error en línea {}: operador faltante en la expresión de control de variable del ciclo Loop".format(p.lexer.lineno - 1))
+    sys.exit(0)
+  else:
+    return patrons.pop()
+
+# Function for poping from Patrons Stack, stops program if empty
+def pop_from_ranges(p):
+  global ranges
+  if not ranges:
+    print("Error en línea {}: operando faltante en la expresión de control de variable del ciclo Loop".format(p.lexer.lineno - 1))
+    sys.exit(0)
+  else:
+    return ranges.pop()
+
 # Function for resetting local directions
 def reset_locals():
   global loc_int
