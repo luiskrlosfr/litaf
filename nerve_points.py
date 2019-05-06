@@ -115,7 +115,7 @@ def p_assign(p):
   global variables
   global quadCont
   global actual_value
-  operator = operators.pop()
+  operator = pop_from_operators(p)
   operand2 = pop_from_variables(p)
   if check_if_exist(p[1]):
     operand1 = actual_value
@@ -328,7 +328,7 @@ def p_factor(p):
     variables.append(actual_value)
     if len(operators) > 0:
       if operators[-1] == '-' and negativeflag ==1:
-        oper = operators.pop()
+        oper = pop_from_operators(p)
         var1 = pop_from_variables(p)
         result = valid_operation(oper, var1, var1)
         if result == -1:
@@ -395,9 +395,9 @@ def p_patron(p):
   global patrons
   global tempCont
   global scopeTable
-  up = variables.pop()
+  up = pop_from_variables(p)
   low = ranges[-1]
-  operator = patrons.pop()
+  operator = pop_from_patrons(p)
   result = valid_operation(operator, low, up)
   if result == -1:
     print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -406,7 +406,9 @@ def p_patron(p):
     quadruples.append(Quad(operator, up, low, result))
     variables.append(result)
     quadCont += 1
-    quadruples.append(Quad('=', None, variables.pop(), ranges.pop()))
+    value = pop_from_variables(p)
+    control_var = pop_from_ranges(p)
+    quadruples.append(Quad('=', None, value, control_var))
     quadCont += 1
     returning = jumps.pop()
     goto = jumps.pop()
@@ -450,7 +452,7 @@ def p_writing_A(p):
   global quadruples
   global variables
   global quadCont
-  message = variables.pop()
+  message = pop_from_variables(p)
   quadruples.append(Quad('Writing', None, None, message))
   quadCont += 1
   p[0] = ""
@@ -471,7 +473,7 @@ def p_bool_values_cycle(p):
   global quadCont
   global variables
   global tempCont
-  up = variables.pop()
+  up = pop_from_variables(p)
   low = scopeTable.scopes['constants'][1].vars[p[1]][1]
   operator = "=="
   result = valid_operation(operator, low, up)
@@ -586,9 +588,9 @@ def p_puntSum(p):
   global variables
   if len(operators) > 0:
     if operators[-1] == '+' or operators[-1] == '-':
-      operator = operators.pop()
-      operand2 = variables.pop()
-      operand1 = variables.pop()
+      operator = pop_from_operators(p)
+      operand2 = pop_from_variables(p)
+      operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
         print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -611,9 +613,9 @@ def p_puntMul(p):
   global tempCont
   if len(operators) > 0:
     if operators[-1] == '*' or operators[-1] == '/':   
-      operator = operators.pop()
-      operand2 = variables.pop()
-      operand1 = variables.pop()
+      operator = pop_from_operators(p)
+      operand2 = pop_from_variables(p)
+      operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
         print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -644,8 +646,8 @@ def p_punt_negation(p):
   global quadruples
   if len(operators) > 0:
     if operators[-1] == '!':
-      operator = operators.pop()
-      operand = variables.pop()
+      operator = pop_from_operators(p)
+      operand = pop_from_variables(p)
       operand2 = None
       result = valid_operation(operator, operand, operand2)
       if result == -1:
@@ -670,9 +672,9 @@ def p_puntLogical(p):
   global tempCont
   if len(operators) > 0:
     if operators[-1] == '>' or operators[-1] == '<' or operators[-1] == '>=' or operators[-1] == '<=' or operators[-1] == '==' or operators[-1] == '!=':   
-      operator = operators.pop()
-      operand2 = variables.pop()
-      operand1 = variables.pop()
+      operator = pop_from_operators(p)
+      operand2 = pop_from_variables(p)
+      operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
         print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -695,9 +697,9 @@ def p_puntAndOr(p):
   global tempCont
   if len(operators) > 0:
     if operators[-1] == '||' or operators[-1] == '&&':   
-      operator = operators.pop()
-      operand2 = variables.pop()
-      operand1 = variables.pop()
+      operator = pop_from_operators(p)
+      operand2 = pop_from_variables(p)
+      operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
         print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -735,7 +737,8 @@ def p_puntIF(p):
   global variables
   global quadCont
   global jumps
-  quadruples.append(Quad('GoToF', None, variables.pop(), None))
+  bool = pop_from_variables(p)
+  quadruples.append(Quad('GoToF', None, bool, None))
   jumps.append(quadCont)
   quadCont += 1
   p[0] = p[1]
@@ -807,7 +810,8 @@ def p_puntElseIfGoToF(p):
   global quadCont
   global jumps
   jumps.append(quadCont)
-  quadruples.append(Quad('GoToF',None, variables.pop(), None))
+  bool = pop_from_variables(p)
+  quadruples.append(Quad('GoToF',None, bool, None))
   quadCont += 1
   p[0] = p[1]
 
@@ -841,7 +845,7 @@ def p_puntUntil(p):
   global quadruples
   global quadCont
   global jumps
-  result = variables.pop()
+  result = pop_from_variables(p)
   quadruples.append(Quad('GoToF', None, result, None))
   jumps.append(quadCont)
   quadCont += 1
@@ -995,6 +999,24 @@ def pop_from_operators(p):
     sys.exit(0)
   else:
     return operators.pop()
+
+# Function for poping from Patrons Stack, stops program if empty
+def pop_from_patrons(p):
+  global patrons
+  if not patrons:
+    print("Error en línea {}: operador faltante en la expresión de control de variable del ciclo Loop".format(p.lexer.lineno - 1))
+    sys.exit(0)
+  else:
+    return patrons.pop()
+
+# Function for poping from Patrons Stack, stops program if empty
+def pop_from_ranges(p):
+  global ranges
+  if not ranges:
+    print("Error en línea {}: operando faltante en la expresión de control de variable del ciclo Loop".format(p.lexer.lineno - 1))
+    sys.exit(0)
+  else:
+    return ranges.pop()
 
 # Function for resetting local directions
 def reset_locals():
