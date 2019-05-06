@@ -42,7 +42,8 @@ def execute_quadruple(quad, ip):
     return_value(quad)
   elif instruction == 'EndProc':
     pointer = pointerStack.pop()
-    assign_return_value(pointer)
+  elif instruction == 'SetReturnValue':
+    assign_return_value(quad.result)
   elif instruction == '+' or instruction == '-' or instruction == '*' or instruction == '/':
     execute_aritmetic_operation(instruction, quad.op1, quad.op2, quad.result)
   elif instruction == '==' or instruction == '!=' or instruction == '>=' or instruction == '>' or instruction == '<=' or instruction == '<':
@@ -127,13 +128,12 @@ def return_value(quad):
   vm_memory.set_local(memoryStack.pop())
 
 # If function had return value, assigns it to corresponding temporal in actual local memory
-def assign_return_value(pointer):
+def assign_return_value(direction):
   global returnStack
   global quadruples
   global vm_memory
   if len(returnStack) > 0 :
     value = returnStack.pop()
-    direction = quadruples[pointer+1].result
     if not check_existence(direction):
       variable_in_memory(direction)
     vm_memory.real_memory(direction).set_value(direction, value)

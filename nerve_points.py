@@ -116,7 +116,7 @@ def p_assign(p):
   global quadCont
   global actual_value
   operator = operators.pop()
-  operand2 = variables.pop()
+  operand2 = pop_from_variables(p)
   if check_if_exist(p[1]):
     operand1 = actual_value
     result = valid_operation(operator, operand1, operand2)
@@ -186,9 +186,8 @@ def p_function_D(p): # Return value for function
   global quadruples
   global quadCont
   global funcType
-  global recursiveCalls
   if funcType != 'void':
-    result = variables.pop()
+    result = pop_from_variables(p)
     result_type = get_type_by_direction(result)
     if funcType == result_type:
       quadruples.append(Quad('return',None,None,result))
@@ -201,8 +200,6 @@ def p_function_D(p): # Return value for function
   quadCont += 1
   quadruples.append(Quad('EndProc',None,None,None))
   quadCont += 1
-  if len(recursiveCalls) > 0:
-    quadruples[recursiveCalls.pop()].op1 = scopeTable.scopes[actualScope][3]
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -213,6 +210,7 @@ def p_function_call_name(p):
   '''
   function_call_name : FUNCTION_ID
   '''
+  global funcName
   global quadruples
   global scopeTable
   global funcName
@@ -251,6 +249,8 @@ def p_punt_validate_void(p):
   if block_flag == 1 and type != 'void':
     print("Error en línea {}: función con valor de retorno sin asignar".format(p.lexer.lineno))
     sys.exit(0)
+  p[0] = p[1]
+
 def p_function_call_hyper_exp(p):
   '''
   function_call_hyper_exp : punt_false_bottom_function hyper_exp
@@ -261,7 +261,8 @@ def p_function_call_hyper_exp(p):
   global variables
   global operators
   contParams += 1
-  quadruples.append(Quad('PARAM', None, variables.pop(), 'param'+str(contParams)))
+  param = pop_from_variables(p)
+  quadruples.append(Quad('PARAM', None, param, 'param'+str(contParams)))
   quadCont += 1
   p[0] = p[1]
 
@@ -328,7 +329,7 @@ def p_factor(p):
     if len(operators) > 0:
       if operators[-1] == '-' and negativeflag ==1:
         oper = operators.pop()
-        var1 = variables.pop()
+        var1 = pop_from_variables(p)
         result = valid_operation(oper, var1, var1)
         if result == -1:
           print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
@@ -367,7 +368,7 @@ def p_loop_value(p):
   global quadCont
   global jumps
   global ranges
-  up = variables.pop()
+  up = pop_from_variables(p)
   low = ranges[-1]
   operator = conditions.pop()
   result = valid_operation(operator, low, up)
@@ -379,7 +380,8 @@ def p_loop_value(p):
     quadCont += 1
     variables.append(result)
     jumps.append(quadCont)
-    quadruples.append(Quad('GoToF', None, variables.pop(), None))
+    bool = pop_from_variables(p)
+    quadruples.append(Quad('GoToF', None, bool, None))
     quadCont += 1
   p[0] = p[1]
 def p_patron(p):
@@ -782,7 +784,7 @@ def p_puntElseIfGOTO(p):
   quadruples[returning].result = quadCont
   p[0] = p[1]
 
-#raises a flag to allow void functions call in block
+# Raises a flag to allow void functions call in block
 def p_punt_flag_block(p):
   '''
   punt_flag_block : empty
@@ -792,7 +794,6 @@ def p_punt_flag_block(p):
     block_flag = 1
   else:
     block_flag = 0
-
   p[0] = p[1]
 
 
@@ -921,11 +922,14 @@ def p_punt_function_call_end(p):
     if funcName == actualScope:
       direction = calc_new_direction(scopeTable.scopes[funcName][0], actualScope)
       variables.append(direction)
-      quadruples.append(Quad('=', None, None, direction))
+      quadruples.append(Quad('SetReturnValue', None, None, direction))
       recursiveCalls.append(quadCont)
       quadCont += 1
     else:
-      variables.append(returnval)
+      direction = calc_new_direction(scopeTable.scopes[actualScope][0], actualScope)
+      quadruples.append(Quad('SetReturnValue', None, None, direction))
+      variables.append(direction)
+      quadCont += 1
   p[0] = p[1]
 
 # Creates Constants Memory structure that is going to be used in Virtual Machine
@@ -973,6 +977,25 @@ def create_scope(scope, typ, quadCont, p):
     sys.exit(0)
   else:
     scopeTable.push(scope, typ, VarTable(), quadCont,None)
+
+# Function for poping from Variables Stack, stops program if empty
+def pop_from_variables(p):
+  global variables
+  if not variables:
+    print("Error en línea {}: variable utilizada sin declarar".format(p.lexer.lineno - 1))
+    sys.exit(0)
+  else:
+    return variables.pop()
+
+# Function for poping from Operators Stack, stops program if empty
+def pop_from_operators(p):
+  global operators
+  if not operators:
+    print("Error en línea {}: operador faltante en expresión".format(p.lexer.lineno - 1))
+    sys.exit(0)
+  else:
+    return operators.pop()
+
 # Function for resetting local directions
 def reset_locals():
   global loc_int
