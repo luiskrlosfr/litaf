@@ -1,28 +1,18 @@
 # Parser for defining all grammar rules
 import ply.yacc as yacc
-from quad import Quad
-from vartable import VarTable, ScopeTable
-from lexer import tokens
-from collections import deque
-scopeTable = ScopeTable()
-actualScope = 'global'
-actualType = 'void'
-contGlobal = 1
-quadruples = []
-operators = []
-types = []
-variables = []
-actualVisib = None
-currentClass = ''
+import lexer
+from lexer import tokens, lexer
+from nerve_points import *
 # Start
 def p_start(p):
   '''
-  start : LITAF START DOUBLE_DOT classes global_vars functions main END
+  start : punt_start_litaf LITAF START DOUBLE_DOT classes global_vars functions main puntSetMemory END
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Classes
 def p_classes(p):
   '''
@@ -37,22 +27,24 @@ def p_classes(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Global Vars
 def p_global_vars(p):
   '''
-  global_vars : createGlobal declarations global_vars_A
-              | empty
+  global_vars : createGlobal global_vars_A
   '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+  p[0] = p[1] + p[2]
 
 def p_global_vars_A(p):
   '''
   global_vars_A : declarations global_vars_A
                 | empty
   '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+
 # Declarations
 def p_declarations(p):
   '''
@@ -61,10 +53,11 @@ def p_declarations(p):
                | declaration_list
   '''
   p[0] = p[1]
+
 # Main
 def p_main(p):
   '''
-  main : MAIN setMain IS INT main_A WITH INT_CONST END
+  main : punt_Go_main MAIN setMain IS INT main_A WITH INT_CONST END
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -79,6 +72,7 @@ def p_main_A(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Functions
 def p_functions(p):
   '''
@@ -89,18 +83,13 @@ def p_functions(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Declaration
 def p_declaration(p):
   '''
   declaration : function_B declaration_A
   '''
-  p[0] = p[1] + p[2]
-def p_declaration_A(p):
-  '''
-  declaration_A : ID declaration_A1
-  '''
-  global actualType
-  insert_var(p[1], actualType)
+  global actualScope
   p[0] = p[1] + p[2]
 def p_declaration_A1(p):
   '''
@@ -111,19 +100,8 @@ def p_declaration_A1(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Assign
-def p_assign(p):
-  '''
-  assign : ID EQUAL appendEqual assign_A 
-  '''
-  global operators
-  global quadruples
-  global variables
-  quadruples.append(Quad(operators.pop(), "", str(variables.pop()), p[1]))
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
 def p_assign_A(p):
   '''
   assign_A : hyper_exp
@@ -131,51 +109,17 @@ def p_assign_A(p):
            | list
   '''
   p[0] = p[1]
+
 # Function
 def p_function(p):
   '''
-  function : FUN getFunId OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS function_B function_C function_D END
+  function : FUN getFunId OPEN_PARENTHESIS params CLOSE_PARENTHESIS IS function_type function_C function_D END 
   '''
-  global actualScope
-  scopeTable.scopes[actualScope][0] = p[7]
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_function_A(p): # Parameters for declaring functions
-  '''
-  function_A : type ID function_A1
-             | empty
-  '''
-  global actualScope
-  global scopeTable
-  if len(p) > 2:
-    insert_var(p[2], p[1])
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
-def p_function_A1(p):
-  '''
-  function_A1 : COMMA type ID function_A1
-              | empty
-  '''
-  if len(p) > 2:
-    global actualScope
-    global scopeTable
-    insert_var(p[3], p[2])
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
-def p_function_B(p): # Type of return value (includes void)
-  '''
-  function_B : type
-             | VOID
-  '''
-  global actualType
-  actualType = p[1]
-  p[0] = p[1]
+
 def p_function_C(p): # Statements inside function
   '''
   function_C : statement function_C
@@ -185,27 +129,20 @@ def p_function_C(p): # Statements inside function
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_function_D(p): # Return value for function
-  '''
-  function_D : WITH hyper_exp
-             | empty
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+
 # Function Call
 def p_function_call(p):
   '''
-  function_call : FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+  function_call : function_call_name punt_validate_void OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS punt_function_call_end
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 def p_function_call_A(p): # Parameters for function call
   '''
-  function_call_A : hyper_exp function_call_A1
+  function_call_A : function_call_hyper_exp function_call_A1
                   | empty
   '''
   p[0] = ""
@@ -214,13 +151,14 @@ def p_function_call_A(p): # Parameters for function call
   p[0]
 def p_function_call_A1(p):
   '''
-  function_call_A1 : COMMA hyper_exp function_call_A1
+  function_call_A1 : COMMA function_call_hyper_exp pop_false_bottom_function function_call_A1
                    | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Statement
 def p_statement(p):
   '''
@@ -232,33 +170,24 @@ def p_statement(p):
 def p_block(p):
   '''
   block : assign
-        | hyper_exp
         | cycle
         | condition
         | lecture
         | writing
-        | list_methods
+        | punt_flag_block function_call punt_flag_block
         | COMMENT
   '''
   p[0] = p[1]
 # Hyper Exp
 def p_hyper_exp(p):
   '''
-  hyper_exp : mega_exp hyper_exp_A
+  hyper_exp : negation mega_exp punt_negation
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_hyper_exp_A(p):
-  '''
-  hyper_exp_A : NOT hyper_exp
-              | empty
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+
 # Mega Exp
 def p_mega_exp(p):
   '''
@@ -277,14 +206,7 @@ def p_mega_exp_A(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_mega_exp_A1(p):
-  '''
-  mega_exp_A1 : AND
-              | OR
-  '''
-  global operators
-  operators.append(p[1])
-  p[0] = p[1]
+
 # Super Exp
 def p_super_exp(p):
   '''
@@ -303,18 +225,7 @@ def p_super_exp_A(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_super_exp_A1(p):
-  '''
-  super_exp_A1 : LESS_THAN
-               | MORE_THAN
-               | EQUAL_EQUAL
-               | LESS_EQUAL
-               | MORE_EQUAL
-               | DIFFERENT_FROM
-  '''
-  global operators
-  operators.append(p[1])
-  p[0] = p[1]
+
 # Exp
 def p_exp(p):
   '''
@@ -333,14 +244,7 @@ def p_exp_A(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_exp_A1(p):
-  '''
-  exp_A1 : PLUS 
-         | MINUS 
-  '''
-  global operators
-  operators.append(p[1])
-  p[0] = p[1]
+
 # Term
 def p_term(p):
   '''
@@ -359,26 +263,10 @@ def p_term_A(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_term_A1(p):
-  '''
-  term_A1 : MULTIPLY
-          | DIVIDE
-  '''
-  global operators
-  operators.append(p[1])
-  p[0] = p[1]
+
 # Factor
-def p_factor(p):
-  '''
-  factor : value
-         | OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
-  '''
-  global variables
-  variables.append(p[1])
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+# All are Nerve Points
+
 # Cycle call
 def p_cycle(p):
   '''
@@ -394,47 +282,37 @@ def p_cycle_A(p):
           | until
   '''
   p[0] = p[1]
-def p_loop(p): # Loop Cycle structure
+
+# Loop Cycle
+def p_loop(p):
   '''
-  loop : LOOP FROM ID TO loop_value BY patron built_block
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
-def p_loop_value(p):
-  '''
-  loop_value : hyper_exp
-  '''
-  p[0] = p[1]
-def p_patron(p):
-  '''
-  patron : patron_A loop_value
+  loop : LOOP FROM puntLoopID loop_to loop_value built_block BY patron
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_patron_A(p):
+def p_loop_to(p):
   '''
-  patron_A : PLUS
-           | MINUS
-           | MULTIPLY
-           | DIVIDE
+  loop_to : UPTO puntLoopUp
+          | DOWNTO puntLoopDown
   '''
-  p[0] = p[1]
+  p[0] = p[1] + p[2]
+
+# Until Cycle
 def p_until(p):
   '''
-  until : UNTIL hyper_exp IS bool_values DO built_block
+  until : UNTIL puntUntilJump hyper_exp IS bool_values_cycle puntUntil DO built_block puntUntilEnd
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Condition
 def p_condition(p):
   '''
-  condition : IF condition_exp built_block condition_A condition_B END
+  condition : IF condition_exp puntIF built_block condition_A condition_B END puntIfEnd
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -450,7 +328,7 @@ def p_condition_exp(p):
   p[0]
 def p_condition_A(p):
   '''
-  condition_A : ELSIF condition_exp built_block condition_A
+  condition_A : puntElseIfGOTO ELSIF condition_exp puntElseIfGoToF built_block condition_A puntElseIfEnd
               | empty
   '''
   p[0] = ""
@@ -459,28 +337,19 @@ def p_condition_A(p):
   p[0]
 def p_condition_B(p):
   '''
-  condition_B : ELSE built_block
+  condition_B : puntElse ELSE built_block
               | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Lecture
 def p_lecture(p):
   '''
   lecture : IN OPEN_PARENTHESIS lecture_A CLOSE_PARENTHESIS
   '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
-def p_lecture_A(p):
-  '''
-  lecture_A : ID lecture_A1
-  '''
-  global quadruples
-  quadruples.append(Quad('lecture', "", "", str(p[1])))
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -494,22 +363,12 @@ def p_lecture_A1(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Writing
 def p_writing(p):
   '''
   writing : OUT OPEN_PARENTHESIS writing_A CLOSE_PARENTHESIS
   '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
-def p_writing_A(p):
-  '''
-  writing_A : hyper_exp writing_A1
-  '''
-  global quadruples
-  global variables
-  quadruples.append(Quad('Writing', "", "", str(variables.pop())))
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -523,7 +382,10 @@ def p_writing_A1(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-############################### Class Related Grammar
+
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#                                                          Class Related Grammar
+#-------------------------------------------------------------------------------------------------------------------------------------------
 # Class
 def p_class(p):
   '''
@@ -598,12 +460,19 @@ def p_methods_A(p):
 # Constructor
 def p_constructor(p):
   '''
-  constructor : visibility constructorClass OPEN_PARENTHESIS function_A CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
+  constructor : visibility constructorClass OPEN_PARENTHESIS params CLOSE_PARENTHESIS IS CLASS_ID constructor_A END
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
+def p_params(p):
+  '''
+  params : function_A
+         | empty
+  '''
+  p[0] = p[1]
 def p_constructor_A(p):
   '''
   constructor_A : statement constructor_A
@@ -641,14 +510,14 @@ def p_declaration_class_A(p):
 # Class Values
 def p_class_values(p):
   '''
-  class_values : call_method
-               | call_attribute
+  class_values :  call_attribute
+               | call_method
   '''
   p[0] = p[1]
 # Call Attribute
 def p_call_attribute(p):
   '''
-  call_attribute : ID DOT ID
+  call_attribute : ID
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -657,13 +526,16 @@ def p_call_attribute(p):
 # Call Method
 def p_call_method(p):
   '''
-  call_method : ID DOT FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+  call_method : FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-############################### Lists (Vectors) Related Grammars
+
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#                                                      Lists (Vectors) Related Grammars
+#-------------------------------------------------------------------------------------------------------------------------------------------
 # List
 def p_list(p):
   '''
@@ -691,17 +563,10 @@ def p_declaration_list_A1(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-# List Values
-def p_list_values(p):
-  '''
-  list_values : list_val
-              | list_pop
-  '''
-  p[0] = p[1]
 # List Value (Single)
 def p_list_val(p):
   '''
-  list_val : ID OPEN_BRACKET INT_CONST CLOSE_BRACKET
+  list_val : OPEN_BRACKET INT_CONST CLOSE_BRACKET
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -715,12 +580,13 @@ def p_list_methods(p):
                | list_concat
                | list_empty
                | list_reverse
+               | list_pop
   '''
   p[0] = p[1]
 # List Pop
 def p_list_pop(p):
   '''
-  list_pop : ID DOT POP OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  list_pop : POP OPEN_PARENTHESIS CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -729,7 +595,7 @@ def p_list_pop(p):
 # List Push
 def p_list_push(p):
   '''
-  list_push : ID DOT PUSH OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
+  list_push : PUSH OPEN_PARENTHESIS hyper_exp CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -738,7 +604,7 @@ def p_list_push(p):
 # List Size
 def p_list_size(p):
   '''
-  list_size : ID DOT SIZE OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  list_size : SIZE 
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -747,7 +613,7 @@ def p_list_size(p):
 # List Concat
 def p_list_concat(p):
   '''
-  list_concat : ID DOT JOIN OPEN_PARENTHESIS list_concat_A CLOSE_PARENTHESIS
+  list_concat : JOIN OPEN_PARENTHESIS list_concat_A CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -762,7 +628,7 @@ def p_list_concat_A(p):
 # List Empty
 def p_list_empty(p):
   '''
-  list_empty : ID DOT EMPTY OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  list_empty : EMPTY OPEN_PARENTHESIS CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -771,13 +637,15 @@ def p_list_empty(p):
 # List Reverse
 def p_list_reverse(p):
   '''
-  list_reverse : ID DOT FLIP OPEN_PARENTHESIS CLOSE_PARENTHESIS
+  list_reverse : FLIP OPEN_PARENTHESIS CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-############################### General Real Value Grammars (These are used or called by many different grammar rules)
+#-------------------------------------------------------------------------------------------------------------------------------------------
+#                           General Real Value Grammars (These are used or called by many different grammar rules)
+#-------------------------------------------------------------------------------------------------------------------------------------------
 # Block for Condition and Cycles
 def p_built_block(p):
   '''
@@ -788,6 +656,7 @@ def p_built_block(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 # Type Val
 def p_type(p):
   '''
@@ -798,33 +667,34 @@ def p_type(p):
        | STR
   '''
   p[0] = p[1]
+
 # Value
 def p_value(p):
   '''
-  value : ID
+  value : ID structure_values
         | constants
-        | list_values
-        | class_values
         | function_call
+    
+  structure_values : DOT structure_values_A
+                   | list_val
+                   | empty
+
+  structure_values_A : list_methods
+                     | class_values
   '''
   p[0] = p[1]
+
 # Constants
 def p_constants(p):
   '''
-  constants : INT_CONST
-            | CHAR_CONST
-            | FLOAT_CONST
-            | STRING_CONST
+  constants : int_const
+            | char_const
+            | float_const
+            | string_const
             | bool_values
   '''
   p[0] = p[1]
-# Bool Values
-def p_bool_values(p):
-  '''
-  bool_values : TRUE
-              | FALSE
-  '''
-  p[0] = p[1]
+
 # Empty
 def p_empty(p):
   '''
@@ -834,168 +704,20 @@ def p_empty(p):
 
 # Simple Error
 def p_error(p):
-  print("Error en la gramática")
-
-############################################### Puntos Neuralgicos
-# Create Global Scope
-def p_createGlobal(p):
-  '''
-  createGlobal : empty
-  '''
-  create_scope("global", "void")
-  p[0] = p[1]
-
-# Get Scope of Function
-def p_getFunId(p):
-  '''
-  getFunId : FUNCTION_ID
-  '''
-  global currentClass
-  scope = currentClass + p[1]
-  create_scope(scope, None)
-  p[0] = p[1]
-
-def p_getClassId(p):
-  '''
-  getClassId : CLASS_ID
-  '''
-  global currentClass
-  currentClass = p[1]
-  create_scope(p[1], "class")
-  p[0] = p[1]
-
-def p_constructorClass(p):
-  '''
-  constructorClass : CLASS_ID
-  '''
-  global currentClass
-  global actualScope
-  currentClass = p[1]
-  cuClass = currentClass + currentClass
-  actualScope = cuClass
-  create_scope(cuClass, currentClass)
-  p[0] = p[1]
-
-def p_getHeritance(p):
-  '''
-  getHeritance : CLASS_ID
-  '''
-  global scopeTable
-  global currentClass
-  if scopeTable.scopes[p[1]]:
-    scopeTable.scopes[currentClass][1].vars = scopeTable.scopes[p[1]][1].vars.copy()
-  else:
-    print("Clase padre '{}' no ha sido declarada").format(p[1])
-  p[0] = p[1]
-# Set Main scope
-def p_setMain(p):
-  '''
-  setMain : empty
-  '''
-  create_scope("main", "int")
-  p[0] = p[1]
-
-def p_puntSum(p):
-  '''
-  puntSum : empty
-  '''
-  global operators
-  global quadruples
-  global contGlobal
-  global variables
-  if len(operators) > 0:
-    if operators[-1] == '+' or operators[-1] == '-':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
-      variables.append("t"+str(contGlobal))
-      contGlobal += 1
-  p[0] = p[1]
-  
-def p_puntMul(p):
-  '''
-  puntMul : empty
-  '''
-  global operators
-  global quadruples
-  global contGlobal
-  global variables
-  if len(operators) > 0:
-    if operators[-1] == '*' or operators[-1] == '/':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
-      variables.append("t"+str(contGlobal))
-      contGlobal += 1
-  p[0] = p[1]
-
-def p_appendEqual(p):
-  '''
-  appendEqual : empty
-  '''
-  global operators
-  operators.append('=')
-  p[0] = p[1]
-
-def p_puntLogical(p):
-  '''
-  puntLogical : empty
-  '''
-  global operators
-  global quadruples
-  global contGlobal
-  global variables
-  if len(operators) > 0:
-    if operators[-1] == '>' or operators[-1] == '<' or operators[-1] == '>=' or operators[-1] == '<=' or operators[-1] == '==' or operators[-1] == '!=':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
-      variables.append("t"+str(contGlobal))
-      contGlobal += 1
-def p_puntAndOr(p):
-  '''
-  puntAndOr : empty
-  '''
-  global operators
-  global quadruples
-  global contGlobal
-  global variables
-  if len(operators) > 0:
-    if operators[-1] == '||' or operators[-1] == '&&':   
-      quadruples.append(Quad(operators.pop(), str(variables.pop()), str(variables.pop()), "t"+str(contGlobal)))
-      variables.append("t"+str(contGlobal))
-      contGlobal += 1
-
-
-################################################## Functions
-# Function for inserting variable in scope table
-def insert_var(var, typ):
-  global actualScope
-  global scopeTable
-  global actualVisib
-  if var in scopeTable.scopes[actualScope][1].vars:
-    print("Error: Variable '{}' ya definida").format(var)
-  else:
-    scopeTable.scopes[actualScope][1].push(var, typ, actualVisib)
-# Function for setting actual scope
-def create_scope(scope, typ):
-  global scopeTable
-  global actualScope
-  global actualVisib
-  actualScope = scope
-  if actualScope in scopeTable.scopes:
-    print("Error: Función '{}' ya existe").format(actualScope)
-  else:
-    scopeTable.push(scope, typ, VarTable(), actualVisib)
-
+  print("Error en línea {}: eror en gramática".format(p.lexer.lineno))
+  sys.exit(0)
 # Build the parser
 parser = yacc.yacc()
 
 # Read file as an input and evaluate if the grammar is acceptable or not. Print a message if it finds an error
 # in the grammar.
-print("Teclea el nombre del archivo de texto")
+print("Teclea el nombre del archivo a compilar")
 name = input('parser >> ')
 
 with open(name, 'r') as myfile:
-  line = myfile.read().replace('\n', '')
+  line = myfile.read()
   result = parser.parse(line)
-  # print(result)
-print(scopeTable.scopes)
-for scope in scopeTable.scopes.values():
-  print(scope[1].vars)
-# for quad in quadruples:
-#   quad.print()
+
+#for quad in quadruples:
+#   print(quad.print())
+

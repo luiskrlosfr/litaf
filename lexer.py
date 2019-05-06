@@ -1,5 +1,4 @@
 # Lexer for defining all Tokens
-
 import ply.lex as lex
 import sys
 
@@ -33,7 +32,7 @@ tokens = [
   'COMMENT',              # Comments
   'DOT',                     # Assignation and Calls
   'COMMA',
-  'DOUBLE_DOT'
+  'DOUBLE_DOT',
 ]
 
 # Tokens of Reserved Words
@@ -67,7 +66,8 @@ reserved = {
   'start'      : 'START',
   'loop'       : 'LOOP',
   'from'       : 'FROM',
-  'to'         : 'TO',
+  'upto'       : 'UPTO',
+  'downto'     :  'DOWNTO',
   'by'         : 'BY',
   'until'      : 'UNTIL',
   'do'         : 'DO',
@@ -80,7 +80,6 @@ reserved = {
 }
 
 # Define simple terminal tokens
-
 t_AND = r'\&\&'
 t_OR = r'\|\|'
 t_EQUAL_EQUAL = r'\=\='
@@ -102,7 +101,8 @@ t_DOT = r'\.'
 t_COMMA = r'\,'
 t_DOUBLE_DOT = r'\:'
 t_EQUAL = r'\='
-t_ignore = ' \t\n'
+t_ignore = " \t"
+
 
 # Define complex terminal tokens
 def t_COMMENT(t):
@@ -147,8 +147,12 @@ def t_INT_CONST(t):
   t.value = int(t.value)
   return t
 
+def t_newline(t):
+  r'\n+'
+  t.lexer.lineno += len(t.value)
+
 def t_error(t):
-  print("Undefined character")
+  print("Caracter desconocido")
   t.lexer.skip(1)
 
 # Combine tokens with reserved words tokens
@@ -184,8 +188,13 @@ lexer = lex.lex()
 #   tok = lexer.token()
 #   if not tok:
 #     break
-#   print(tok)
-# lexer.input("litaf start : fun SWAG() is void end main is int x3 + 5 + FIBONACCI(3) out('A') with 0 end end") # -> PROGRAM ID DOUBLEDOT OPENKEY CLOSEKEY tokens
+# #   print(tok)
+# lexer.input('''litaf start : main is int 
+#                int x
+#                x = 3
+#                int x
+#                with 0 end 
+#             end''') # -> PROGRAM ID DOUBLEDOT OPENKEY CLOSEKEY tokens
 # while True:
 #   tok = lexer.token()
 #   if not tok:
