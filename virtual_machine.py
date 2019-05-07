@@ -7,10 +7,6 @@ pointerStack = []
 returnStack = []
 params = []
 vm_memory = BigMemory()
-# actualMemory = Memory(100000, 110000)
-# Memory(300000, 310000)
-# globalMemory = Memory(200000, 210000)
-# constantMemory = Memory(300000, None)
 
 arithmetic_operations = { '+' : operator.add, '-' : operator.sub, '*' : operator.mul, '/' : operator.truediv }
 logical_operations = { '==' : operator.eq,  '!=' : operator.ne, '>=' : operator.ge, '>' : operator.gt, '<=' : operator.le, '<' : operator.lt }

@@ -14,19 +14,6 @@ def p_start(p):
   p[0]
 
 # Classes
-def p_classes(p):
-  '''
-  classes : class classes
-          | empty
-  '''
-  global actualVisib
-  global currentClass
-  currentClass = ''
-  actualVisib = None
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
 
 # Global Vars
 def p_global_vars(p):
@@ -105,7 +92,6 @@ def p_declaration_A1(p):
 def p_assign_A(p):
   '''
   assign_A : hyper_exp
-           | CLASS_ID DOT NEW OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
            | list
   '''
   p[0] = p[1]
@@ -175,6 +161,7 @@ def p_block(p):
         | lecture
         | writing
         | punt_flag_block function_call punt_flag_block
+        | create_object
         | COMMENT
   '''
   p[0] = p[1]
@@ -389,7 +376,7 @@ def p_writing_A1(p):
 # Class
 def p_class(p):
   '''
-  class : CLASS getClassId heritance IS class_attributes class_methods END
+  class : CLASS getClassId heritance IS class_attributes class_methods puntClassEnd END
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -418,15 +405,6 @@ def p_attributes(p):
   attributes : attributes_A attributes
              | empty
   '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
-def p_attributes_A(p):
-  '''
-  attributes_A : visibility type ID
-  '''
-  insert_var(p[3], p[2])
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -482,31 +460,36 @@ def p_constructor_A(p):
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-def p_visibility(p):
-  '''
-  visibility : PUBLIC
-             | PRIVATE
-  '''
-  global actualVisib
-  actualVisib = p[1]
-  p[0] = p[1]
 # Class Declaration
 def p_declaration_class(p):
   '''
-  declaration_class : CLASS_ID ID declaration_class_A
+  declaration_class : declare_class_ID get_class_variables declaration_class_A
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
 def p_declaration_class_A(p):
   '''
-  declaration_class_A : COMMA ID declaration_class_A
+  declaration_class_A : COMMA get_class_variables declaration_class_A
                       | empty
-  '''  
+  '''
+  p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
+# Create instance of object
+def p_create_object(p):
+  '''
+  create_object : new_object_id DOT NEW puntNewObject OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS puntGoConstructor
+  '''
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+
 # Class Values
 def p_class_values(p):
   '''
@@ -526,7 +509,7 @@ def p_call_attribute(p):
 # Call Method
 def p_call_method(p):
   '''
-  call_method : FUNCTION_ID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+  call_method : puntMethodID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -717,7 +700,11 @@ name = input('parser >> ')
 with open(name, 'r') as myfile:
   line = myfile.read()
   result = parser.parse(line)
+  
+# for scope in scopeTable.scopes.keys():
+#     print(scope)
+#     print(scopeTable.scopes[scope][1].vars)
 
-#for quad in quadruples:
-#   print(quad.print())
+for quad in quadruples:
+  print(quad.print())
 

@@ -24,10 +24,13 @@ ranges = []
 conditions = []
 patrons = []
 recursiveCalls = []
+classAttribute = []
 funcType = ''
 cube = Semcube()
 actualVisib = None
 currentClass = ''
+inside_class = False
+fatherClass = ''
 #---------------------------VARIABLES MEMORIAS-------------------------------
 loc_int = 100000
 loc_flo = 102000
@@ -111,13 +114,18 @@ def p_assign(p):
   operand2 = pop_from_variables(p)
   if check_if_exist(p[1]):
     operand1 = actual_value
-    result = valid_operation(operator, operand1, operand2)
-    if result == -1:
-      print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
-      sys.exit(0)
-    else:
+    if actual_value == None:
       quadruples.append(Quad(operator, None, operand2, operand1))
+      classAttribute.append(quadCont)
       quadCont += 1
+    else:
+      result = valid_operation(operator, operand1, operand2)
+      if result == -1:
+        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        sys.exit(0)
+      else:
+        quadruples.append(Quad(operator, None, operand2, operand1))
+        quadCont += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -213,7 +221,7 @@ def p_function_call_name(p):
   quadruples.append(Quad('ERA', None, None, funcName))
   quadCont += 1
   p[0] = p[1]
-#Agrega un false bottom para establecer los parametros de funciones
+# Agrega un false bottom para establecer los parametros de funciones
 def p_punt_false_bottom_function(p):
   '''
   punt_false_bottom_function : empty
@@ -453,16 +461,46 @@ def p_writing_A(p):
   p[0]
 
 # Classes
+def p_classes(p):
+  '''
+  classes : class classes
+          | empty
+  '''
+  global actualVisib
+  global currentClass
+  global inside_class
+  currentClass = ''
+  actualVisib = 'public'
+  inside_class = False
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+
+# Public or Private
+def p_visibility(p):
+  '''
+  visibility : PUBLIC
+             | PRIVATE
+  '''
+  global actualVisib
+  actualVisib = p[1]
+  p[0] = p[1]
+
 def p_constructorClass(p):
   '''
   constructorClass : CLASS_ID
   '''
   global currentClass
   global actualScope
-  currentClass = p[1]
-  cuClass = currentClass + currentClass
-  actualScope = cuClass
-  create_scope(cuClass, "class", quadCont, p)
+  global quadCont
+  if currentClass != p[1]:
+    print("Error en línea {}: clase '{}' no corresponde al constructor de '{}'".format(p.lexer.lineno, p[1], currentClass))
+    sys.exit(0)
+  else:
+    cuClass = currentClass + '_' + currentClass
+    actualScope = cuClass
+    create_scope(cuClass, 'class', quadCont, p)
   p[0] = p[1]
 
 def p_getHeritance(p):
@@ -471,11 +509,35 @@ def p_getHeritance(p):
   '''
   global scopeTable
   global currentClass
+  global fatherClass
+  fatherClass = p[1]
   if scopeTable.scopes[p[1]]:
     scopeTable.scopes[currentClass][1].vars = scopeTable.scopes[p[1]][1].vars.copy()
   else:
-    print("Clase padre '{}' no ha sido declarada").format(p[1])
+    print("Error en línea {}: clase padre '{}' no existe").format(p.lexer.lineno, p[1])
+    sys.exit(0)
   p[0] = p[1]
+
+def p_get_class_variables(p):
+  '''
+  get_class_variables : ID
+  '''
+  global scopeTable
+  global actualScope
+  create_object_attributes(p[1], p)
+  p[0] = p[1]
+
+# Atributtes
+def p_attributes_A(p):
+  '''
+  attributes_A : visibility type ID
+  '''
+  global actualScope
+  insert_var(p[3], p[2], actualScope, p)
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                      General Real Value Grammars with Nerve Points (These are used or called by many different grammar rules)
@@ -563,7 +625,7 @@ def p_createGlobal(p):
   global scopeTable
   global actualScope
   actualScope = 'global'
-  create_scope("global", "void", None, p)
+  create_scope('global', "void", None, p)
   p[0] = p[1]
 
 # Creates Scope for Function
@@ -573,7 +635,9 @@ def p_getFunId(p):
   '''
   global quadCont
   global currentClass
+  global actualScope
   scope = currentClass + p[1]
+  actualScope = scope
   reset_locals()
   create_scope(scope, None, quadCont, p)
   p[0] = p[1]
@@ -583,10 +647,27 @@ def p_getClassId(p):
   '''
   getClassId : CLASS_ID
   '''
-  global quadCont
   global currentClass
+  global actualScope
+  global inside_class
+  global fatherClass
+  fatherClass = p[1]
+  inside_class = True
+  actualScope = p[1]
   currentClass = p[1]
-  create_scope(p[1], "class", quadCont, p)
+  create_scope(p[1], 'class', None, p)
+  p[0] = p[1]
+
+def p_declare_class_ID(p):
+  '''
+  declare_class_ID : CLASS_ID
+  '''
+  global currentClass
+  global scopeTable
+  currentClass = p[1]
+  if not check_if_type_exist():
+    print("Error en línea {}: clase '{}' no existe".format(p.lexer.lineno, p[1]))
+    sys.exit(0)
   p[0] = p[1]
 
 # Creates Scope for Main
@@ -595,7 +676,10 @@ def p_setMain(p):
   setMain : empty
   '''
   global quadCont
-  create_scope("main", "int", quadCont, p)
+  global scopeTable
+  global actualScope
+  create_scope('main', 'int', quadCont, p)
+  actualScope = 'main'
   p[0] = p[1]
 
 # Fill GoTo Main Function
@@ -968,6 +1052,66 @@ def p_punt_function_call_end(p):
       quadCont += 1
   p[0] = p[1]
 
+# Set father Class to empty
+def p_puntClassEnd(p):
+  '''
+  puntClassEnd : empty
+  '''
+  global fatherClass
+  fatherClass = ''
+  p[0] = p[1]
+
+# Create Quadruple ERA for Constructor
+def p_puntNewObject(p):
+  '''
+  puntNewObject : empty
+  '''
+  global scopeTable
+  global actualScope
+  global quadCont
+  global quadruples
+  global currentClass
+  name = currentClass + '_' + currentClass
+  quadruples.append(Quad('ERA_OBJ', None, None, name))
+  quadCont += 1
+  p[0] = p[1]
+
+# Create Quadruple of GoTo Constructor
+def p_puntGoConstructor(p):
+  '''
+  puntGoConstructor : empty
+  '''
+  global quadCont
+  global quadruples
+  global currentClass
+  global scopeTable
+  name = currentClass + '_' + currentClass
+  dir = scopeTable.scopes[name][2]
+  quadruples.append(Quad('GoTo_Obj', None, None, dir))
+  quadCont += 1
+  p[0] = p[1]
+
+# Check the ID of the object instance
+def p_new_object_id(p):
+  '''
+  new_object_id : ID
+  '''
+  global currentClass
+  global actualScope
+  global scopeTable
+  if check_if_exist(p[1]):
+    currentClass = scopeTable.scopes[actualScope][1].vars[p[1]][0]
+  else:
+    print("Error en línea {}: variable '{}' sin definir".format(p.lexer.lineno - 1, p[1]))
+    sys.exit(0)
+  p[0] = p[1]
+
+def p_puntMethodID(p):
+  '''
+  puntMethodID : FUNCTION_ID
+  '''
+  
+
 # Creates Constants Memory structure that is going to be used in Virtual Machine
 def p_puntSetMemory(p):
   '''
@@ -990,9 +1134,10 @@ def p_puntSetMemory(p):
 # Function for inserting variable in scope table
 def insert_var(var, typ, scope, p):
   global scopeTable
+  global actualScope
   if var not in scopeTable.scopes[scope][1].vars:
     dir = calc_dir(typ, scope)
-    scopeTable.scopes[scope][1].push(var, typ, dir)
+    scopeTable.scopes[scope][1].push(var, typ, dir, actualVisib)
   else:
     print("Error en linea {}: variable '{}' ya definida".format(p.lexer.lineno - 1, var))
     sys.exit(0) 
@@ -1001,18 +1146,28 @@ def insert_var(var, typ, scope, p):
 def insert_constant(var, typ):
   if var not in scopeTable.scopes['constants'][1].vars:
     dir = calc_dir(typ, 'constants')
-    scopeTable.scopes['constants'][1].push(var, typ, dir)
+    scopeTable.scopes['constants'][1].push(var, typ, dir, "public")
 
 # Function for setting actual scope
 def create_scope(scope, typ, quadCont, p):
   global scopeTable
   global actualScope
-  actualScope = scope
-  if actualScope in scopeTable.scopes:
-    print("Error en línea {}: función '{}' ya existe".format(p.lexer.lineno - 1, actualScope))
+  global actualVisib
+  if scope in scopeTable.scopes:
+    print("Error en línea {}: función '{}' ya existe".format(p.lexer.lineno - 1, scope))
     sys.exit(0)
   else:
-    scopeTable.push(scope, typ, VarTable(), quadCont, None)
+    scopeTable.push(scope, typ, VarTable(), quadCont, None, actualVisib)
+
+def insert_attribute(var, typ, scope, visib, p):
+  global scopeTable
+  global actualScope
+  if var not in scopeTable.scopes[scope][1].vars:
+    dir = calc_dir(typ, scope)
+    scopeTable.scopes[scope][1].push(var, typ, dir, actualVisib)
+  else:
+    print("Error en linea {}: variable '{}' ya definida".format(p.lexer.lineno - 1, var))
+    sys.exit(0) 
 
 # Function for poping from Variables Stack, stops program if empty
 def pop_from_variables(p):
@@ -1142,6 +1297,17 @@ def check_if_exist(var):
   global scopeTable
   global actualScope
   global actual_value
+  global inside_class
+  global fatherClass
+  if inside_class:
+    if var in scopeTable.scopes[fatherClass][1].vars:
+      actual_value = scopeTable.scopes[fatherClass][1].vars[var][1]
+      return True
+    elif var in scopeTable.scopes[actualScope][1].vars:
+      actual_value = scopeTable.scopes[actualScope][1].vars[var][1]
+      return True
+    else:
+      return False
   if var in scopeTable.scopes[actualScope][1].vars:
     actual_value = scopeTable.scopes[actualScope][1].vars[var][1]
     return True
@@ -1150,6 +1316,30 @@ def check_if_exist(var):
     return True
   elif var in scopeTable.scopes['global'][1].vars:
     actual_value = scopeTable.scopes['global'][1].vars[var][1]
+    return True
+  else:
+    return False
+
+# Create a variable for each attribute
+def create_object_attributes(id, p):
+  global currentClass
+  global scopeTable
+  global actualScope
+  if check_if_exist(id):
+    print("Error en línea {}: variable '{}' ya existe".format(p.lexer.lineno, id))
+    sys.exit(0)
+  else:
+    insert_var(id, currentClass, actualScope, p)
+    for attribute in scopeTable.scopes[currentClass][1].vars.keys():
+      name = id + "." + attribute
+      typ = scopeTable.scopes[currentClass][1].vars[attribute][0]
+      insert_var(name, typ, actualScope, p)
+
+# Check if Class Type exists
+def check_if_type_exist():
+  global currentClass
+  global scopeTable
+  if currentClass in scopeTable.scopes.keys():
     return True
   else:
     return False
