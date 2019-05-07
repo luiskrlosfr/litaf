@@ -31,6 +31,7 @@ actualVisib = None
 currentClass = ''
 inside_class = False
 fatherClass = ''
+currentVariable = ''
 #---------------------------VARIABLES MEMORIAS-------------------------------
 loc_int = 100000
 loc_flo = 102000
@@ -235,7 +236,8 @@ def p_pop_false_bottom_function(p):
   pop_false_bottom_function : empty
   '''
   global operators
-  operators.pop()
+  if operators[-1] == '(':
+    operators.pop()
   p[0] = p[1]
 
 def p_punt_validate_void(p):
@@ -1032,8 +1034,9 @@ def p_punt_function_call_end(p):
   global operators
   global actualScope
   global recursiveCalls
-  if len(operators) > 0:
+  if len(operators) > 0 and operators[-1] == '(':
     operators.pop()
+  check_function_existence(funcName, p)
   dir = scopeTable.scopes[funcName][2]
   quadruples.append(Quad('GoSub', None, None, dir))
   quadCont += 1
@@ -1087,7 +1090,7 @@ def p_puntGoConstructor(p):
   global scopeTable
   name = currentClass + '_' + currentClass
   dir = scopeTable.scopes[name][2]
-  quadruples.append(Quad('GoTo_Obj', None, None, dir))
+  quadruples.append(Quad('GoSub_Obj', None, None, dir))
   quadCont += 1
   p[0] = p[1]
 
@@ -1096,11 +1099,11 @@ def p_new_object_id(p):
   '''
   new_object_id : ID
   '''
-  global currentClass
+  global currentVariable
   global actualScope
   global scopeTable
   if check_if_exist(p[1]):
-    currentClass = scopeTable.scopes[actualScope][1].vars[p[1]][0]
+    currentVariable = scopeTable.scopes[actualScope][1].vars[p[1]][0]
   else:
     print("Error en línea {}: variable '{}' sin definir".format(p.lexer.lineno - 1, p[1]))
     sys.exit(0)
@@ -1110,7 +1113,40 @@ def p_puntMethodID(p):
   '''
   puntMethodID : FUNCTION_ID
   '''
-  
+  global funcName
+  global quadCont
+  global quadruples
+  global currentVariable
+  global scopeTable
+  global actualScope
+  funcName = scopeTable.scopes[actualScope][1].vars[currentVariable][0] + p[1]
+  quadruples.append(Quad('ERA_OBJ', None, None, funcName))
+  quadCont += 1
+  p[0] = p[1]
+
+# Quadruple GoSub Method
+def p_puntGoMethod(p):
+  '''
+  puntGoMethod : empty
+  '''
+  global funcName
+  global quadCont
+  global quadruples
+  global scopeTable
+  check_function_existence(funcName, p)
+  dir = scopeTable.scopes[funcName][2]
+  quadruples.append(Quad('GoSub_Obj', None, None, dir))
+  quadCont += 1
+  p[0] = p[1]
+
+# Set ID of methods or attributes
+def p_puntValueID(p):
+  '''
+  puntValueID : ID
+  '''
+  global currentVariable
+  currentVariable = p[1]
+  p[0] = p[1]
 
 # Creates Constants Memory structure that is going to be used in Virtual Machine
 def p_puntSetMemory(p):
@@ -1347,6 +1383,8 @@ def check_if_type_exist():
 # Check if operation is valid between operands
 def valid_operation(oper, op1, op2):
   global cube
+  global actualScope
+  global variables
   var1 = get_type_by_direction(op1)
   var2 = get_type_by_direction(op2)
   result = cube.cube[var1][oper][var2]
@@ -1354,6 +1392,13 @@ def valid_operation(oper, op1, op2):
     return -1
   else:
     return calc_new_direction(result, oper)
+
+# Check if function or method exists (for Go Sub)
+def check_function_existence(name, p):
+  global scopeTable
+  if name not in scopeTable.scopes.keys():
+    print("Error en línea {}: no existe el método '{}'".format(p.lexer.lineno, name))
+    sys.exit(0)
 
 # Get the new direction
 def calc_new_direction(type, operator):

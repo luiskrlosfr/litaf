@@ -509,7 +509,7 @@ def p_call_attribute(p):
 # Call Method
 def p_call_method(p):
   '''
-  call_method : puntMethodID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS
+  call_method : puntMethodID OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS puntGoMethod
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -654,7 +654,7 @@ def p_type(p):
 # Value
 def p_value(p):
   '''
-  value : ID structure_values
+  value : puntValueID structure_values
         | constants
         | function_call
     
@@ -705,6 +705,6 @@ with open(name, 'r') as myfile:
 #     print(scope)
 #     print(scopeTable.scopes[scope][1].vars)
 
-for quad in quadruples:
-  print(quad.print())
+# for quad in quadruples:
+#   print(quad.print())
 
