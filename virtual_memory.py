@@ -5,14 +5,23 @@ BOO_CONS = 8000
 
 # Atomic class for Virtual Machine Memory.
 class VirtualMemory:
-  def __init__(self, offset):
+  def __init__(self, offset, type):
     self.vars = []
     self.offset = offset
+    self.type = type
 
   def push(self, data):
+    if self.type == 'int' and data != None:
+      data = int(data)
+    elif self.type == 'flo' and data != None:
+      data = float(data)
     self.vars.append(data)
 
   def set_value(self, dir, val):
+    if self.type == 'int' and val != None:
+      val = int(val)
+    elif self.type == 'flo' and val != None:
+      val = float(val)
     self.vars[dir - self.offset] = val
 
   def get_value(self, dir):
@@ -36,11 +45,11 @@ class VirtualMemory:
 class Memories:
   def __init__(self, base_dir):
     self.base_dir = base_dir
-    self.int = VirtualMemory(self.base_dir)
-    self.flo = VirtualMemory(self.base_dir + FLO_CONS)
-    self.str = VirtualMemory(self.base_dir + STR_CONS)
-    self.cha = VirtualMemory(self.base_dir + CHA_CONS)
-    self.boo = VirtualMemory(self.base_dir + BOO_CONS)
+    self.int = VirtualMemory(self.base_dir, 'int')
+    self.flo = VirtualMemory(self.base_dir + FLO_CONS, 'flo')
+    self.str = VirtualMemory(self.base_dir + STR_CONS, 'str')
+    self.cha = VirtualMemory(self.base_dir + CHA_CONS, 'cha')
+    self.boo = VirtualMemory(self.base_dir + BOO_CONS, 'boo')
 
   def get_type_by_direction(self, direction):
     if(self.base_dir <= direction and direction < self.base_dir + 2000):

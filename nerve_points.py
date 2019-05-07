@@ -104,7 +104,7 @@ def p_negation(p):
 # Assign
 def p_assign(p):
   '''
-  assign : ID EQUAL appendEqual assign_A
+  assign : ids EQUAL appendEqual assign_A
   '''
   global operators
   global quadruples
@@ -127,6 +127,19 @@ def p_assign(p):
       else:
         quadruples.append(Quad(operator, None, operand2, operand1))
         quadCont += 1
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+
+def p_ids(p):
+  '''
+  ids : puntValueID 
+      | id_attribute puntIdAttribute
+  '''
+  global variables
+  global scopeTable
+  global actualScope
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -1001,6 +1014,7 @@ def p_puntLoopID(p):
     jumps.append(quadCont)
   else:
     print("Error en línea {}: variable '{}' sin definir".format(p.lexer.lineno - 1, p[1]))
+    sys.exit(0)
   p[0] = p[1]
 
 # Appends '<=' to Operator Stack
@@ -1146,6 +1160,12 @@ def p_puntValueID(p):
   '''
   global currentVariable
   currentVariable = p[1]
+  if check_if_exist(p[1]):
+    var = scopeTable.scopes[actualScope][1].vars[p[1]][1]
+    variables.append(var)
+  else:
+    print("Error en línea {}: variable '{}' sin definir".format(p.lexer.lineno - 1, p[1]))
+    sys.exit(0)
   p[0] = p[1]
 
 # Creates Constants Memory structure that is going to be used in Virtual Machine
@@ -1164,6 +1184,51 @@ def p_puntSetMemory(p):
     else:
       memory[constants[con][1]] = con
   p[0] = p[1]
+
+# Check attribute
+def p_puntIdAttribute(p):
+  '''
+  puntIdAttribute : ID
+  '''
+  global scopeTable
+  global actualScope
+  global currentVariable
+  var = currentClass + '.' + p[1]
+  if check_if_exist(var):
+    if scopeTable.scopes[actualScope][1].vars[var][2] == 'private':
+      print("Error en línea {}: no es posible acceder al atributo '{}' porque es privado".format(p.lexer.lineno, p[1]))
+      sys.exit(0)
+  p[0] = p[1]
+
+def p_id_attribute(p):
+  '''
+  id_attribute : ID DOT
+  '''
+  global currentVariable
+  currentVariable = p[1]
+  p[0] = p[1] + p[2]
+
+# Call Attribute
+def p_call_attribute(p):
+  '''
+  call_attribute : ID
+  '''
+  p[0] = ""
+  global currentVariable
+  global actualScope
+  global scopeTable
+  global variables
+  var = currentVariable + '.' + p[1]
+  if check_if_exist(var):
+    var = scopeTable.scopes[actualScope][1].vars[var]
+    if var[2] == 'private':
+      print("Error en línea {}: no es posible acceder al atributo '{}' porque es privado".format(p.lexer.lineno, p[1]))
+      sys.exit(0)
+    else:
+      variables.append(var[1])
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                                 Functions
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -1171,6 +1236,7 @@ def p_puntSetMemory(p):
 def insert_var(var, typ, scope, p):
   global scopeTable
   global actualScope
+  global actualVisib
   if var not in scopeTable.scopes[scope][1].vars:
     dir = calc_dir(typ, scope)
     scopeTable.scopes[scope][1].push(var, typ, dir, actualVisib)
@@ -1182,7 +1248,7 @@ def insert_var(var, typ, scope, p):
 def insert_constant(var, typ):
   if var not in scopeTable.scopes['constants'][1].vars:
     dir = calc_dir(typ, 'constants')
-    scopeTable.scopes['constants'][1].push(var, typ, dir, "public")
+    scopeTable.scopes['constants'][1].push(str(var), typ, dir, "public")
 
 # Function for setting actual scope
 def create_scope(scope, typ, quadCont, p):
@@ -1336,31 +1402,33 @@ def check_if_exist(var):
   global inside_class
   global fatherClass
   if inside_class:
-    if var in scopeTable.scopes[fatherClass][1].vars:
+    if var in scopeTable.scopes[fatherClass][1].vars.keys():
       actual_value = scopeTable.scopes[fatherClass][1].vars[var][1]
       return True
-    elif var in scopeTable.scopes[actualScope][1].vars:
+    elif var in scopeTable.scopes[actualScope][1].vars.keys():
       actual_value = scopeTable.scopes[actualScope][1].vars[var][1]
       return True
     else:
       return False
-  if var in scopeTable.scopes[actualScope][1].vars:
-    actual_value = scopeTable.scopes[actualScope][1].vars[var][1]
-    return True
-  elif var in scopeTable.scopes['constants'][1].vars:
-    actual_value = scopeTable.scopes['constants'][1].vars[var][1]
-    return True
-  elif var in scopeTable.scopes['global'][1].vars:
-    actual_value = scopeTable.scopes['global'][1].vars[var][1]
-    return True
   else:
-    return False
+    if var in scopeTable.scopes[actualScope][1].vars.keys():
+      actual_value = scopeTable.scopes[actualScope][1].vars[var][1]
+      return True
+    elif var in scopeTable.scopes['constants'][1].vars.keys():
+      actual_value = scopeTable.scopes['constants'][1].vars[var][1]
+      return True
+    elif var in scopeTable.scopes['global'][1].vars.keys():
+      actual_value = scopeTable.scopes['global'][1].vars[var][1]
+      return True
+    else:
+      return False
 
 # Create a variable for each attribute
 def create_object_attributes(id, p):
   global currentClass
   global scopeTable
   global actualScope
+  global actualVisib
   if check_if_exist(id):
     print("Error en línea {}: variable '{}' ya existe".format(p.lexer.lineno, id))
     sys.exit(0)
@@ -1369,7 +1437,9 @@ def create_object_attributes(id, p):
     for attribute in scopeTable.scopes[currentClass][1].vars.keys():
       name = id + "." + attribute
       typ = scopeTable.scopes[currentClass][1].vars[attribute][0]
+      actualVisib = scopeTable.scopes[currentClass][1].vars[attribute][2]
       insert_var(name, typ, actualScope, p)
+    actualVisib = 'public'
 
 # Check if Class Type exists
 def check_if_type_exist():

@@ -483,7 +483,7 @@ def p_declaration_class_A(p):
 # Create instance of object
 def p_create_object(p):
   '''
-  create_object : new_object_id DOT NEW puntNewObject OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS puntGoConstructor
+  create_object : id_attribute NEW puntNewObject OPEN_PARENTHESIS function_call_A CLOSE_PARENTHESIS puntGoConstructor
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -493,19 +493,11 @@ def p_create_object(p):
 # Class Values
 def p_class_values(p):
   '''
-  class_values :  call_attribute
+  class_values : call_attribute
                | call_method
   '''
   p[0] = p[1]
-# Call Attribute
-def p_call_attribute(p):
-  '''
-  call_attribute : ID
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+
 # Call Method
 def p_call_method(p):
   '''
@@ -665,7 +657,10 @@ def p_value(p):
   structure_values_A : list_methods
                      | class_values
   '''
-  p[0] = p[1]
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 
 # Constants
 def p_constants(p):
