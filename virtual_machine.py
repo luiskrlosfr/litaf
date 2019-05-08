@@ -13,6 +13,7 @@ arithmetic_operations = { '+' : operator.add, '-' : operator.sub, '*' : operator
 compare_operations = { '==' : operator.eq,  '!=' : operator.ne, '>=' : operator.ge, '>' : operator.gt, '<=' : operator.le, '<' : operator.lt }
 logic_operations = { '&&' : operator.and_, '||' : operator.or_ }
 
+# Decides what the Quadrupe is suposed to do
 def execute_quadruple(quad, ip):
   global memoryStack
   global pointerStack
@@ -190,6 +191,7 @@ def fill_params():
     local_dir = vm_memory.real_memory(no_temporal).get_dir_as_local(no_temporal)
     vm_memory.real_memory(local_dir).push(value)
 
+# Fill Constant Memory with Constant Memory from Parser
 pointer = 0
 if len(memory) > 0:
   for var in memory:
@@ -197,5 +199,12 @@ if len(memory) > 0:
 
 create_local_memory()
 
+# Print Quadruples
+# counter = 0
+# for quad in quadruples:
+#   quad.print(counter)
+#   counter += 1
+
+# Execute Quadruples list until Program Ends
 while(pointer < len(quadruples)):
   pointer = execute_quadruple(quadruples[pointer], pointer)
