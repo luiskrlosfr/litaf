@@ -3,6 +3,7 @@ litaf start :
     main is int 
         int x, y
         flo z
+        z = 245 / (9 - 9)
         in(x, y, z)
         out(x, " ", y, "n/", z)
     with 0 end 

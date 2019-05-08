@@ -700,18 +700,18 @@ def p_empty(p):
 def p_error(p):
   print("Error en línea {}: eror en gramática".format(p.lexer.lineno))
   sys.exit(0)
+  
 # Build the parser
 parser = yacc.yacc()
 
 # Read file as an input and evaluate if the grammar is acceptable or not. Print a message if it finds an error
 # in the grammar.
-print("Teclea el nombre del archivo a compilar")
-name = input('parser >> ')
+name = sys.argv[1]
 
-with open(name, 'r') as myfile:
-  line = myfile.read()
-  result = parser.parse(line)
-
-# for quad in quadruples:
-#   print(quad.print())
+if name.endswith('.lit'):
+  with open(name, 'r') as myfile:
+    line = myfile.read()
+    result = parser.parse(line)
+else:
+  print('Cannot read non .lit files')
 
