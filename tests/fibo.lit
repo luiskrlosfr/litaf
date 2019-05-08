@@ -1,0 +1,28 @@
+litaf start : 
+    
+  fun FIBONACCI(int x) is int     
+  % Fibonacci Recursivo %
+    int result, y, z
+    if (x < 2)
+      result = x
+    else
+      result = FIBONACCI(x - 1) + FIBONACCI(x - 2)
+    end
+  with result end
+  
+  main is int 
+  % Fibonacci iterativo %
+    int i, x, x0, x1, fib
+    i = 1
+    x1 = 0
+    x = 1
+    in(fib)
+    loop from i upto fib - 1
+      x0 = x1
+      x1 = x
+      x = x0 + x1
+    by +1 end
+    out("Fibonacci Iterativo: ", "n/", x, "n/")
+    out("Fibonacci Recursivo: ", "n/", FIBONACCI(fib))
+  with 0 end 
+end

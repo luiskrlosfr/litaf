@@ -1,0 +1,26 @@
+litaf start : 
+
+  fun FACTORIAL(int fac) is int
+  % Factorial recursivo %
+    int i, x
+    i = 1
+    x = i
+    loop from i upto fac
+      x = x * i
+    by +1 end
+  with x end
+
+  main is int
+  % Factorial iterativo %
+    int i, x, fac
+    i = 1
+    x = i
+    in(fac)
+    loop from i upto fac
+      x = x * i
+    by +1 end
+    out("Factorial Iterativo: ", "n/", x, "n/")
+    out("Factorial Recursivo: ", "n/", FACTORIAL(fac))
+  with 0 end 
+
+end

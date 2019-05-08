@@ -95,6 +95,7 @@ class BigMemory:
   def set_local(self, memory):
     self.locals = memory
 
+  # Get from what Memory direction should search for value
   def get_real_memory_by_direction(self, direction):
     if(300000 <= direction and direction < 400000):
       return self.constants.get_memory_by_direction(direction)
@@ -105,6 +106,7 @@ class BigMemory:
     else:
       return None
 
+  # Return real value of direction
   def real_memory(self, direction):
     return self.get_real_memory_by_direction(direction)
 
