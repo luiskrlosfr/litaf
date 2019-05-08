@@ -50,6 +50,8 @@ def execute_quadruple(quad, ip):
     execute_logic_operation(instruction, quad.op1, quad.op2, quad.result)
   elif instruction == 'Writing':
     output_msg(quad.result)
+  elif instruction == 'Lecture':
+    input_variable(quad.result)
   elif instruction == '=':
     execute_assign(vm_memory.real_memory(quad.op1).get_value(quad.op1), quad.result)
   pointer += 1
@@ -103,7 +105,24 @@ def create_local_memory():
 # Print function for Writing quad instruction
 def output_msg(direction):
   global vm_memory
-  print(vm_memory.real_memory(direction).get_value(direction))
+  value = vm_memory.real_memory(direction).get_value(direction)
+  if value == "n/":
+    print('')
+  else:
+    print(value, end = '')
+
+# Inputs from user to variable
+def input_variable(direction):
+  global vm_memory
+  value = input("insert {} > ".format(vm_memory.real_memory(direction).typ))
+  typ = vm_memory.real_memory(direction).typ 
+  if not check_existence(direction):
+    variable_in_memory(direction)
+  if typ == 'int':
+    value = int(value)
+  elif typ == 'flo':
+    value = float(value)
+  vm_memory.real_memory(direction).set_value(direction, value)
 
 # Create empty slots of memory if variable doesn't exists in it
 def variable_in_memory(direction):

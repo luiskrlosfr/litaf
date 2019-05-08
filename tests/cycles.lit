@@ -1,0 +1,24 @@
+litaf start : 
+    main is int 
+        int i, x, fac, x0, x1, fib
+        % Factorial iterativo %
+        i = 1
+        fac = 8
+        x = i
+        loop from i upto fac
+            x = x * i
+        by +1 end
+        out(x)
+        % Fibonacci iterativo %
+        i = 1
+        x1 = 0
+        x = 1
+        fib = 5
+        loop from i upto fib - 1
+            x0 = x1
+            x1 = x
+            x = x0 + x1
+        by +1 end
+        out(x)
+    with 0 end 
+end

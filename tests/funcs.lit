@@ -1,0 +1,43 @@
+litaf start :
+    fun ADD(int a, int b) is int
+        int result
+        result = a + b
+    with result end
+
+    fun NO(int y, str var) is void
+        out(var)
+    end
+
+    fun FACTORIAL(int x) is int
+        int fac
+        if (x == 0)
+            fac = 1
+        else
+            fac = x * FACTORIAL(x - 1)
+        end
+    with fac end
+
+    fun FIBONACCI(int x) is int
+        int result, y, z
+        if (x < 2)
+            result = x
+        else
+            result = FIBONACCI(x - 1) + FIBONACCI(x - 2)
+        end
+    with result end
+
+    main is int 
+        int x, y, z
+        x = 7
+        y = 10000
+        z = ADD(x, y)
+        out("SWAG")
+        loop from x upto 9
+            out('A')
+        by +1 end
+        out(z)
+        out(20 - ADD(x, y))
+        out(FACTORIAL(5))
+        out(FIBONACCI(7))
+    with 0 end 
+end

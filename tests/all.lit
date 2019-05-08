@@ -1,0 +1,37 @@
+litaf start:
+    int globalVar
+
+    fun NO() is void
+        globalVar = 250
+        out('N', " ", 'O', "n/")
+    end
+
+    fun FIBONACCI(int x) is int
+        int result, y, z
+        if (x < 2)
+            result = x
+        else
+            result = FIBONACCI(x - 1) + FIBONACCI(x - 2)
+        end
+    with result end
+
+    fun FACTORIAL(int fac) is int
+        int i, x
+        i = 1
+        x = i
+        loop from i upto fac
+            x = x * i
+        by +1 end
+    with x end
+
+    main is int
+    int x 
+    in(x)
+    NO()
+    out(FIBONACCI(x))
+    if (FIBONACCI(x) < FACTORIAL(3))
+        out(globalVar, FACTORIAL(3))
+    end
+    with 0 end
+
+end

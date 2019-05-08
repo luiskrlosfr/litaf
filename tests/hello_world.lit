@@ -1,0 +1,5 @@
+litaf start : 
+    main is int 
+        out("Hello World from litaf!")
+    with 0 end 
+end

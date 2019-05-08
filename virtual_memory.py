@@ -16,6 +16,9 @@ class VirtualMemory:
   def set_value(self, dir, val):
     self.vars[dir - self.offset] = val
 
+  def set_direct_value(self, dir, val):
+    self.vars[dir] = val
+
   def get_value(self, dir):
     return self.vars[dir - self.offset]
 
@@ -75,6 +78,14 @@ class Memory:
     else:
       return None
 
+  # def get_direct_memory_by_direction(self, direction):
+  #   if(self.base_variables <= direction and (self.base_temporals == None or direction < self.base_temporals)):
+  #     return self.variables.get_type_by_direction(direction)
+  #   elif(self.base_temporals <= direction and direction < self.base_temporals + 10000):
+  #     return self.temporals.get_type_by_direction(direction)
+  #   else:
+  #     return None
+
 class BigMemory:
   def __init__(self):
     self.locals = None
@@ -97,4 +108,6 @@ class BigMemory:
   def real_memory(self, direction):
     return self.get_real_memory_by_direction(direction)
 
+  # def real_direct_memory(self, direction):
+  #   return self.get_direct_memory_by_direction(direction)
   

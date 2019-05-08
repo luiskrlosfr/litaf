@@ -1,0 +1,9 @@
+litaf start : 
+    
+    main is int 
+        int x, y
+        flo z
+        in(x, y, z)
+        out(x, " ", y, "n/", z)
+    with 0 end 
+end
