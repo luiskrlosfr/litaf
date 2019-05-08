@@ -1,5 +1,6 @@
 # LITAF
 Compiler and programming language "litaf"
+Last compiled date: May 08, 2019
 # The language
 ## Structure
 Litad follows a minimum structure, so be sure to follow it before compiling it!
