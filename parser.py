@@ -698,7 +698,7 @@ def p_empty(p):
 
 # Simple Error
 def p_error(p):
-  print("Error en línea {}: eror en gramática".format(p.lexer.lineno))
+  print("Syntax error at {}".format(p.lexer.lineno))
   sys.exit(0)
   
 # Build the parser

@@ -152,7 +152,7 @@ def t_newline(t):
   t.lexer.lineno += len(t.value)
 
 def t_error(t):
-  print("Caracter desconocido")
+  print("Unknown character")
   t.lexer.skip(1)
 
 # Combine tokens with reserved words tokens
