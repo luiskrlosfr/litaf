@@ -63,6 +63,8 @@ def execute_aritmetic_operation(op, left, right, res_direction):
   l = vm_memory.real_memory(left).get_value(left)
   r = vm_memory.real_memory(right).get_value(right)
   result =  arithmetic_operations[op](l, r)
+  if op == '/' and vm_memory.real_memory(left).typ == 'int' and vm_memory.real_memory(right).typ == 'int':
+    result = int(result)
   if not check_existence(res_direction):
     variable_in_memory(res_direction)
   vm_memory.real_memory(res_direction).set_value(res_direction, result)

@@ -6,15 +6,18 @@ from lexer import tokens, lexer
 from collections import deque
 from semcube import Semcube
 scopeTable = ScopeTable()
+cube = Semcube()
 actualScope = 'global'
 actualType = 'void'
 block_flag = 0
-funcName = ''
 quadCont = 0
 contParams = 0
 tempCont = 0
 negativeflag = 0
+writCont = 0
 actual_value = ''
+funcName = ''
+funcType = ''
 quadruples = []
 operators = []
 types = []
@@ -24,8 +27,7 @@ ranges = []
 conditions = []
 patrons = []
 recursiveCalls = []
-funcType = ''
-cube = Semcube()
+output = []
 #---------------------------VARIABLES MEMORIAS-------------------------------
 loc_int = 100000
 loc_flo = 102000
@@ -433,28 +435,42 @@ def p_patron_A(p):
 # Lecture
 def p_lecture_A(p):
   '''
-  lecture_A : ID lecture_A1
+  lecture_A : lecture_ID lecture_A1
   '''
-  global quadruples
-  global quadCont
-  quadruples.append(Quad('lecture', "", "", str(p[1])))
-  quadCont += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
+# ID for lecture
+def p_lecture_ID(p):
+  '''
+  lecture_ID : ID
+  '''
+  global quadruples
+  global quadCont
+  global actual_value
+  if check_if_exist(p[1]):
+    lec = actual_value
+    quadruples.append(Quad('Lecture', None, None, lec))
+    quadCont += 1
+  else:
+    print("Syntax error at line {}: undeclared variable '{}'".format(p.lexer.lineno, p[1]))
+    sys.exit(0)
+  p[0] = p[1]
 
 # Writing
 def p_writing_A(p):
   '''
   writing_A : hyper_exp writing_A1
   '''
-  global quadruples
   global variables
-  global quadCont
+  global writCont
+  global output
+  writCont = 0
   message = pop_from_variables(p)
-  quadruples.append(Quad('Writing', None, None, message))
-  quadCont += 1
+  output.append(Quad('Writing', None, None, message))
+  writCont += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -951,6 +967,21 @@ def p_puntSetMemory(p):
       memory[constants['true'][1]] = True
     else:
       memory[constants[con][1]] = con
+  p[0] = p[1]
+
+# Output stack reversed so print are from left to right
+def p_puntReverseOuts(p):
+  '''
+  puntReverseOuts : empty
+  '''
+  global quadruples
+  global quadCont
+  global output
+  global writCont
+  while len(output) > 0:
+    quad = output.pop()
+    quadruples.append(quad)
+    quadCont += 1
   p[0] = p[1]
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                                 Functions

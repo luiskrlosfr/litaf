@@ -5,9 +5,10 @@ BOO_CONS = 8000
 
 # Atomic class for Virtual Machine Memory.
 class VirtualMemory:
-  def __init__(self, offset):
+  def __init__(self, offset, typ):
     self.vars = []
     self.offset = offset
+    self.typ = typ
 
   def push(self, data):
     self.vars.append(data)
@@ -36,11 +37,11 @@ class VirtualMemory:
 class Memories:
   def __init__(self, base_dir):
     self.base_dir = base_dir
-    self.int = VirtualMemory(self.base_dir)
-    self.flo = VirtualMemory(self.base_dir + FLO_CONS)
-    self.str = VirtualMemory(self.base_dir + STR_CONS)
-    self.cha = VirtualMemory(self.base_dir + CHA_CONS)
-    self.boo = VirtualMemory(self.base_dir + BOO_CONS)
+    self.int = VirtualMemory(self.base_dir, 'int')
+    self.flo = VirtualMemory(self.base_dir + FLO_CONS, 'flo')
+    self.str = VirtualMemory(self.base_dir + STR_CONS, 'str')
+    self.cha = VirtualMemory(self.base_dir + CHA_CONS, 'cha')
+    self.boo = VirtualMemory(self.base_dir + BOO_CONS, 'boo')
 
   def get_type_by_direction(self, direction):
     if(self.base_dir <= direction and direction < self.base_dir + 2000):

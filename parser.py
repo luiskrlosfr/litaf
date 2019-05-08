@@ -363,7 +363,7 @@ def p_lecture_A1(p):
 # Writing
 def p_writing(p):
   '''
-  writing : OUT OPEN_PARENTHESIS writing_A CLOSE_PARENTHESIS
+  writing : OUT OPEN_PARENTHESIS writing_A CLOSE_PARENTHESIS puntReverseOuts
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -712,6 +712,6 @@ with open(name, 'r') as myfile:
   line = myfile.read()
   result = parser.parse(line)
 
-#for quad in quadruples:
+# for quad in quadruples:
 #   print(quad.print())
 
