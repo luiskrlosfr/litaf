@@ -6,15 +6,18 @@ from lexer import tokens, lexer
 from collections import deque
 from semcube import Semcube
 scopeTable = ScopeTable()
+cube = Semcube()
 actualScope = 'global'
 actualType = 'void'
 block_flag = 0
-funcName = ''
 quadCont = 0
 contParams = 0
 tempCont = 0
 negativeflag = 0
+writCont = 0
 actual_value = ''
+funcName = ''
+funcType = ''
 quadruples = []
 operators = []
 types = []
@@ -24,8 +27,7 @@ ranges = []
 conditions = []
 patrons = []
 recursiveCalls = []
-funcType = ''
-cube = Semcube()
+output = []
 #---------------------------VARIABLES MEMORIAS-------------------------------
 loc_int = 100000
 loc_flo = 102000
@@ -121,7 +123,7 @@ def p_assign(p):
     operand1 = actual_value
     result = valid_operation(operator, operand1, operand2)
     if result == -1:
-      print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+      print("Invalid operation at {}".format(p.lexer.lineno))
       sys.exit(0)
     else:
       quadruples.append(Quad(operator, None, operand2, operand1))
@@ -193,7 +195,7 @@ def p_function_D(p): # Return value for function
       quadruples.append(Quad('return',None,None,result))
       scopeTable.scopes[actualScope][3] = result
     else:
-      print("Error en línea {}: tipos no coinciden".format(p.lexer.lineno - 1))
+      print("Type mismatch at {}".format(p.lexer.lineno))
       sys.exit(0)
   else:
     quadruples.append(Quad('return',None,None,None))
@@ -247,7 +249,7 @@ def p_punt_validate_void(p):
   global scopeTable
   type = scopeTable.scopes[funcName][0]
   if block_flag == 1 and type != 'void':
-    print("Error en línea {}: función con valor de retorno sin asignar".format(p.lexer.lineno))
+    print("No returning value for function at {}".format(p.lexer.lineno))
     sys.exit(0)
   p[0] = p[1]
 
@@ -332,7 +334,7 @@ def p_factor(p):
         var1 = pop_from_variables(p)
         result = valid_operation(oper, var1, var1)
         if result == -1:
-          print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+          print("Invalid operation at {}".format(p.lexer.lineno))
           sys.exit(0)
         else:
           quadruples.append(Quad(oper,var1,0,result))
@@ -373,7 +375,7 @@ def p_loop_value(p):
   operator = conditions.pop()
   result = valid_operation(operator, low, up)
   if result == -1:
-    print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+    print("Invalid operation at {}".format(p.lexer.lineno))
     sys.exit(0)
   else:
     quadruples.append(Quad(operator, up, low, result))
@@ -400,7 +402,7 @@ def p_patron(p):
   operator = pop_from_patrons(p)
   result = valid_operation(operator, low, up)
   if result == -1:
-    print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+    print("Invalid operation at {}".format(p.lexer.lineno))
     sys.exit(0)
   else:
     quadruples.append(Quad(operator, up, low, result))
@@ -433,28 +435,42 @@ def p_patron_A(p):
 # Lecture
 def p_lecture_A(p):
   '''
-  lecture_A : ID lecture_A1
+  lecture_A : lecture_ID lecture_A1
   '''
-  global quadruples
-  global quadCont
-  quadruples.append(Quad('lecture', "", "", str(p[1])))
-  quadCont += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
+
+# ID for lecture
+def p_lecture_ID(p):
+  '''
+  lecture_ID : ID
+  '''
+  global quadruples
+  global quadCont
+  global actual_value
+  if check_if_exist(p[1]):
+    lec = actual_value
+    quadruples.append(Quad('Lecture', None, None, lec))
+    quadCont += 1
+  else:
+    print("Syntax error at line {}: undeclared variable '{}'".format(p.lexer.lineno, p[1]))
+    sys.exit(0)
+  p[0] = p[1]
 
 # Writing
 def p_writing_A(p):
   '''
   writing_A : hyper_exp writing_A1
   '''
-  global quadruples
   global variables
-  global quadCont
+  global writCont
+  global output
+  writCont = 0
   message = pop_from_variables(p)
-  quadruples.append(Quad('Writing', None, None, message))
-  quadCont += 1
+  output.append(Quad('Writing', None, None, message))
+  writCont += 1
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -478,7 +494,7 @@ def p_bool_values_cycle(p):
   operator = "=="
   result = valid_operation(operator, low, up)
   if result == -1:
-    print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+    print("Invalid operation at {}".format(p.lexer.lineno))
     sys.exit(0)
   else:
     quadruples.append(Quad(operator, up, low, result))
@@ -593,7 +609,7 @@ def p_puntSum(p):
       operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
-        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        print("Invalid operation at {}".format(p.lexer.lineno))
         sys.exit(0)
       else:
         quadruples.append(Quad(operator, operand2, operand1, result))
@@ -618,7 +634,7 @@ def p_puntMul(p):
       operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
-        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        print("Invalid operation at {}".format(p.lexer.lineno))
         sys.exit(0)
       else:
         quadruples.append(Quad(operator, operand2, operand1, result))
@@ -651,7 +667,7 @@ def p_punt_negation(p):
       operand2 = None
       result = valid_operation(operator, operand, operand2)
       if result == -1:
-        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        print("Invalid operation at {}".format(p.lexer.lineno))
         sys.exit(0)
       else:
         quadruples.append(Quad(operator,operand,operand2,result))
@@ -677,7 +693,7 @@ def p_puntLogical(p):
       operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
-        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        print("Invalid operation at {}".format(p.lexer.lineno))
         sys.exit(0)
       else:
         quadruples.append(Quad(operator, operand2, operand1, result))
@@ -702,7 +718,7 @@ def p_puntAndOr(p):
       operand1 = pop_from_variables(p)
       result = valid_operation(operator, operand1, operand2)
       if result == -1:
-        print("Error en línea {}: operación inválida".format(p.lexer.lineno - 1))
+        print("Invalid operation at {}".format(p.lexer.lineno))
         sys.exit(0)
       else:
         quadruples.append(Quad(operator, operand2, operand1, result))
@@ -882,7 +898,7 @@ def p_puntLoopID(p):
     ranges.append(actual_value)
     jumps.append(quadCont)
   else:
-    print("Error en línea {}: variable '{}' sin definir".format(p.lexer.lineno - 1, p[1]))
+    print("Undefined variable '{}' at {}".format(p[1], p.lexer.lineno))
   p[0] = p[1]
 
 # Appends '<=' to Operator Stack
@@ -952,6 +968,21 @@ def p_puntSetMemory(p):
     else:
       memory[constants[con][1]] = con
   p[0] = p[1]
+
+# Output stack reversed so print are from left to right
+def p_puntReverseOuts(p):
+  '''
+  puntReverseOuts : empty
+  '''
+  global quadruples
+  global quadCont
+  global output
+  global writCont
+  while len(output) > 0:
+    quad = output.pop()
+    quadruples.append(quad)
+    quadCont += 1
+  p[0] = p[1]
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                                 Functions
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -962,7 +993,7 @@ def insert_var(var, typ, scope, p):
     dir = calc_dir(typ, scope)
     scopeTable.scopes[scope][1].push(var, typ, dir)
   else:
-    print("Error en linea {}: variable '{}' ya definida".format(p.lexer.lineno - 1, var))
+    print("Error at line {}: Variable '{}' already defined".format(p.lexer.lineno, var))
     sys.exit(0) 
 
 # Function for inserting constant in constants table
@@ -977,7 +1008,7 @@ def create_scope(scope, typ, quadCont, p):
   global actualScope
   actualScope = scope
   if actualScope in scopeTable.scopes:
-    print("Error en línea {}: función '{}' ya existe".format(p.lexer.lineno - 1, actualScope))
+    print("Error at line {}: function '{}' already defined".format(p.lexer.lineno, actualScope))
     sys.exit(0)
   else:
     scopeTable.push(scope, typ, VarTable(), quadCont,None)
@@ -986,7 +1017,7 @@ def create_scope(scope, typ, quadCont, p):
 def pop_from_variables(p):
   global variables
   if not variables:
-    print("Error en línea {}: variable utilizada sin declarar".format(p.lexer.lineno - 1))
+    print("Undefined variable at {}".format(p.lexer.lineno))
     sys.exit(0)
   else:
     return variables.pop()
@@ -995,7 +1026,7 @@ def pop_from_variables(p):
 def pop_from_operators(p):
   global operators
   if not operators:
-    print("Error en línea {}: operador faltante en expresión".format(p.lexer.lineno - 1))
+    print("Missing operator at {}".format(p.lexer.lineno))
     sys.exit(0)
   else:
     return operators.pop()
@@ -1004,7 +1035,7 @@ def pop_from_operators(p):
 def pop_from_patrons(p):
   global patrons
   if not patrons:
-    print("Error en línea {}: operador faltante en la expresión de control de variable del ciclo Loop".format(p.lexer.lineno - 1))
+    print("Missing Loop cycle operator at {}".format(p.lexer.lineno))
     sys.exit(0)
   else:
     return patrons.pop()
@@ -1013,7 +1044,7 @@ def pop_from_patrons(p):
 def pop_from_ranges(p):
   global ranges
   if not ranges:
-    print("Error en línea {}: operando faltante en la expresión de control de variable del ciclo Loop".format(p.lexer.lineno - 1))
+    print("Missing Loop cycle control variable at {}".format(p.lexer.lineno))
     sys.exit(0)
   else:
     return ranges.pop()

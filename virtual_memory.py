@@ -5,15 +5,19 @@ BOO_CONS = 8000
 
 # Atomic class for Virtual Machine Memory.
 class VirtualMemory:
-  def __init__(self, offset):
+  def __init__(self, offset, typ):
     self.vars = []
     self.offset = offset
+    self.typ = typ
 
   def push(self, data):
     self.vars.append(data)
 
   def set_value(self, dir, val):
     self.vars[dir - self.offset] = val
+
+  def set_direct_value(self, dir, val):
+    self.vars[dir] = val
 
   def get_value(self, dir):
     return self.vars[dir - self.offset]
@@ -36,11 +40,11 @@ class VirtualMemory:
 class Memories:
   def __init__(self, base_dir):
     self.base_dir = base_dir
-    self.int = VirtualMemory(self.base_dir)
-    self.flo = VirtualMemory(self.base_dir + FLO_CONS)
-    self.str = VirtualMemory(self.base_dir + STR_CONS)
-    self.cha = VirtualMemory(self.base_dir + CHA_CONS)
-    self.boo = VirtualMemory(self.base_dir + BOO_CONS)
+    self.int = VirtualMemory(self.base_dir, 'int')
+    self.flo = VirtualMemory(self.base_dir + FLO_CONS, 'flo')
+    self.str = VirtualMemory(self.base_dir + STR_CONS, 'str')
+    self.cha = VirtualMemory(self.base_dir + CHA_CONS, 'cha')
+    self.boo = VirtualMemory(self.base_dir + BOO_CONS, 'boo')
 
   def get_type_by_direction(self, direction):
     if(self.base_dir <= direction and direction < self.base_dir + 2000):
@@ -74,6 +78,14 @@ class Memory:
     else:
       return None
 
+  # def get_direct_memory_by_direction(self, direction):
+  #   if(self.base_variables <= direction and (self.base_temporals == None or direction < self.base_temporals)):
+  #     return self.variables.get_type_by_direction(direction)
+  #   elif(self.base_temporals <= direction and direction < self.base_temporals + 10000):
+  #     return self.temporals.get_type_by_direction(direction)
+  #   else:
+  #     return None
+
 class BigMemory:
   def __init__(self):
     self.locals = None
@@ -96,4 +108,6 @@ class BigMemory:
   def real_memory(self, direction):
     return self.get_real_memory_by_direction(direction)
 
+  # def real_direct_memory(self, direction):
+  #   return self.get_direct_memory_by_direction(direction)
   

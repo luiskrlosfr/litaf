@@ -1,0 +1,11 @@
+litaf start : 
+    int globalVar
+    main is int 
+        int x, y, z
+        x = 1 - (9 - 15) * 3
+        y = 55 - x
+        z = x * 10000 + y
+        globalVar = z + 36 * -1
+        out(globalVar)
+    with 0 end 
+end

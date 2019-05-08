@@ -1,16 +1,13 @@
+import operator
+import sys
 from parser import quadruples, memory
 from virtual_memory import BigMemory, Memory
-import operator
 
 memoryStack = []
 pointerStack = []
 returnStack = []
 params = []
 vm_memory = BigMemory()
-# actualMemory = Memory(100000, 110000)
-# Memory(300000, 310000)
-# globalMemory = Memory(200000, 210000)
-# constantMemory = Memory(300000, None)
 
 arithmetic_operations = { '+' : operator.add, '-' : operator.sub, '*' : operator.mul, '/' : operator.truediv }
 logical_operations = { '==' : operator.eq,  '!=' : operator.ne, '>=' : operator.ge, '>' : operator.gt, '<=' : operator.le, '<' : operator.lt }
@@ -50,6 +47,8 @@ def execute_quadruple(quad, ip):
     execute_logic_operation(instruction, quad.op1, quad.op2, quad.result)
   elif instruction == 'Writing':
     output_msg(quad.result)
+  elif instruction == 'Lecture':
+    input_variable(quad.result)
   elif instruction == '=':
     execute_assign(vm_memory.real_memory(quad.op1).get_value(quad.op1), quad.result)
   pointer += 1
@@ -62,7 +61,12 @@ def execute_aritmetic_operation(op, left, right, res_direction):
   global pointerStack
   l = vm_memory.real_memory(left).get_value(left)
   r = vm_memory.real_memory(right).get_value(right)
+  if op == '/' and r == 0 or r == '0':
+    print('Error: cannot divide by 0')
+    sys.exit(0)
   result =  arithmetic_operations[op](l, r)
+  if op == '/' and vm_memory.real_memory(left).typ == 'int' and vm_memory.real_memory(right).typ == 'int':
+    result = int(result)
   if not check_existence(res_direction):
     variable_in_memory(res_direction)
   vm_memory.real_memory(res_direction).set_value(res_direction, result)
@@ -101,7 +105,24 @@ def create_local_memory():
 # Print function for Writing quad instruction
 def output_msg(direction):
   global vm_memory
-  print(vm_memory.real_memory(direction).get_value(direction))
+  value = vm_memory.real_memory(direction).get_value(direction)
+  if value == "n/":
+    print('')
+  else:
+    print(value, end = '')
+
+# Inputs from user to variable
+def input_variable(direction):
+  global vm_memory
+  value = input("insert {} > ".format(vm_memory.real_memory(direction).typ))
+  typ = vm_memory.real_memory(direction).typ 
+  if not check_existence(direction):
+    variable_in_memory(direction)
+  if typ == 'int':
+    value = int(value)
+  elif typ == 'flo':
+    value = float(value)
+  vm_memory.real_memory(direction).set_value(direction, value)
 
 # Create empty slots of memory if variable doesn't exists in it
 def variable_in_memory(direction):

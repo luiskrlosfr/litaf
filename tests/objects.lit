@@ -1,0 +1,39 @@
+
+litaf start : 
+
+    class Person is
+        attributes:
+            public int age
+        end
+        methods:
+            public Person() is Person
+            end
+        end
+    end
+
+    class Student from Person is
+        attributes:
+            public str name
+            public str lastName
+            private int id
+        end
+        methods:
+            public Student(str n, int num) is Student
+            end
+        end
+    end
+
+    fun AGE() is void
+        int var
+        var = 134 + 24 / 321
+        out(var)
+    end
+
+    main is int
+        str s
+        int i, x
+        i = 5
+        AGE()
+        out(i)
+    with 0 end 
+end
