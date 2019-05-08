@@ -10,7 +10,8 @@ params = []
 vm_memory = BigMemory()
 
 arithmetic_operations = { '+' : operator.add, '-' : operator.sub, '*' : operator.mul, '/' : operator.truediv }
-logical_operations = { '==' : operator.eq,  '!=' : operator.ne, '>=' : operator.ge, '>' : operator.gt, '<=' : operator.le, '<' : operator.lt }
+compare_operations = { '==' : operator.eq,  '!=' : operator.ne, '>=' : operator.ge, '>' : operator.gt, '<=' : operator.le, '<' : operator.lt }
+logic_operations = { '&&' : operator.and_, '||' : operator.or_ }
 
 def execute_quadruple(quad, ip):
   global memoryStack
@@ -44,6 +45,8 @@ def execute_quadruple(quad, ip):
   elif instruction == '+' or instruction == '-' or instruction == '*' or instruction == '/':
     execute_aritmetic_operation(instruction, quad.op1, quad.op2, quad.result)
   elif instruction == '==' or instruction == '!=' or instruction == '>=' or instruction == '>' or instruction == '<=' or instruction == '<':
+    execute_comparison_operation(instruction, quad.op1, quad.op2, quad.result)
+  elif instruction == '&&' or instruction == '||':
     execute_logic_operation(instruction, quad.op1, quad.op2, quad.result)
   elif instruction == 'Writing':
     output_msg(quad.result)
@@ -78,9 +81,17 @@ def execute_assign(left, res_direction):
   vm_memory.real_memory(res_direction).set_value(res_direction, left)
 
 # Executes logical operations according to operator
+def execute_comparison_operation(op, left, right, res_direction):
+  global vm_memory
+  result = compare_operations[op](vm_memory.real_memory(left).get_value(left), vm_memory.real_memory(right).get_value(right))
+  if not check_existence(res_direction):
+    variable_in_memory(res_direction)
+  vm_memory.real_memory(res_direction).set_value(res_direction, result)
+
+# Execute logical operations according to operator
 def execute_logic_operation(op, left, right, res_direction):
   global vm_memory
-  result = logical_operations[op](vm_memory.real_memory(left).get_value(left), vm_memory.real_memory(right).get_value(right))
+  result = logic_operations[op](vm_memory.real_memory(left).get_value(left), vm_memory.real_memory(right).get_value(right))
   if not check_existence(res_direction):
     variable_in_memory(res_direction)
   vm_memory.real_memory(res_direction).set_value(res_direction, result)
@@ -95,7 +106,7 @@ def evaluate_goto_false(pointer, quadruple):
 
 # Evaluates a logic operation and returns result
 def evaluate_logic_operation(op, left, right):
-  return logical_operations[op](left, right)
+  return compare_operations[op](left, right)
 
 # Creates local Memory for function
 def create_local_memory():
