@@ -3,8 +3,12 @@ litaf start :
     main is int 
         int x, y
         flo z
-        z = 245 / (9 - 9)
+        boo t, f
+        t = true
+        f = false
+        z = 245 / (9 - 7)
         in(x, y, z)
         out(x, " ", y, "n/", z)
+        out(t && f, t || f, t && t, f && f, f || f)
     with 0 end 
 end
