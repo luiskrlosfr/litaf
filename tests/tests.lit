@@ -1,0 +1,30 @@
+litaf start:
+  int pow
+
+  fun POW(int x) is int
+    int result, i
+    i = 1
+    result = 1
+    loop from i upto pow
+      result = result * x
+    by +1 end
+  with result end
+
+  fun DIGITS(int num) is int
+    int i
+    if(num < 10)
+      i = 1
+    else
+      i = 1 + DIGITS(num / 10)
+    end
+  with i end
+
+  main is int
+    int num
+    out("Input the int you want to raise", "n/")
+    in(num)
+    out("Input the power", "n/")
+    in(pow)
+    out(num, " ^ ", pow, " = ", POW(num, pow), "n/", DIGITS(103))
+  with 0 end
+end
