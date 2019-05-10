@@ -18,6 +18,7 @@ writCont = 0
 actual_value = ''
 funcName = ''
 funcType = ''
+actual_variable_type = ''
 quadruples = []
 operators = []
 types = []
@@ -34,6 +35,7 @@ loc_flo = 102000
 loc_str = 104000
 loc_cha = 106000
 loc_boo = 108000
+loc_lis = 120000
 loc_tem_int = 110000
 loc_tem_flo = 112000
 loc_tem_str = 114000
@@ -44,6 +46,7 @@ glo_flo = 202000
 glo_str = 204000
 glo_cha = 206000
 glo_boo = 208000
+glo_lis = 220000
 glo_tem_int = 210000
 glo_tem_flo = 212000
 glo_tem_str = 214000
@@ -93,7 +96,7 @@ def p_declarationID(p):
   '''
   global actualType
   global actualScope
-  insert_var(p[1], actualType, actualScope, p)
+  insert_var(p[1], actualType, actualScope, 1, p)
   p[0] = p[1]
 
 #Negation
@@ -141,7 +144,7 @@ def p_function_A(p): # Parameters for declaring functions
   global actualScope
   global scopeTable
   if len(p) > 2:
-    insert_var(p[2], p[1], actualScope, p)
+    insert_var(p[2], p[1], actualScope, 1, p)
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
@@ -326,8 +329,10 @@ def p_factor(p):
   global quadruples
   global operators
   global negativeflag
+  global actual_variable_type
   if p[1] != '(' and check_if_exist(p[2]):
-    variables.append(actual_value)
+    if actual_variable_type != 'lis':
+      variables.append(actual_value)
     if len(operators) > 0:
       if operators[-1] == '-' and negativeflag ==1:
         oper = pop_from_operators(p)
@@ -983,15 +988,61 @@ def p_puntReverseOuts(p):
     quadruples.append(quad)
     quadCont += 1
   p[0] = p[1]
+
+# Set list id and size
+def p_puntListID(p):
+  '''
+  puntListID : ID OPEN_BRACKET int_const CLOSE_BRACKET
+  '''
+  global scopeTable
+  global actualScope
+  insert_var(p[1], 'lis', actualScope, int(p[3]), p)
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+
+# Get one value of the list
+def p_list_val(p):
+  '''
+  list_val : OPEN_BRACKET hyper_exp CLOSE_BRACKET
+  '''
+  global quadruples
+  global quadCont
+  global variables
+  global actualScope
+  global scopeTable
+  global actual_value
+  if check_if_exist(p[-1]):
+    scope = ''
+    if p[-1] in scopeTable.scopes[actualScope][1].vars:
+      scope = actualScope
+    else:
+      scope = 'global'
+    size = scopeTable.scopes[scope][1].vars[p[-1]][2]
+    dirSize = scopeTable.scopes['constants'][1].vars[size][1]
+    index = pop_from_variables(p)
+    quadruples.append(Quad('VER', None, index, dirSize))
+    quadCont += 1
+    baseDir = scopeTable.scopes[scope][1].vars[p[-1]][1]
+    dir = baseDir + index
+    actual_value = dir
+  else:
+    print("Error at line {}: variable '{}' not declared".format(p.lexer.lineno, p[-1]))
+    sys.exit(0)
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #                                                                 Functions
 #-------------------------------------------------------------------------------------------------------------------------------------------
 # Function for inserting variable in scope table
-def insert_var(var, typ, scope, p):
+def insert_var(var, typ, scope, size, p):
   global scopeTable
   if var not in scopeTable.scopes[scope][1].vars:
-    dir = calc_dir(typ, scope)
-    scopeTable.scopes[scope][1].push(var, typ, dir)
+    dir = calc_dir(typ, scope, size)
+    scopeTable.scopes[scope][1].push(var, typ, dir, size)
   else:
     print("Error at line {}: Variable '{}' already defined".format(p.lexer.lineno, var))
     sys.exit(0) 
@@ -999,8 +1050,8 @@ def insert_var(var, typ, scope, p):
 # Function for inserting constant in constants table
 def insert_constant(var, typ):
   if var not in scopeTable.scopes['constants'][1].vars:
-    dir = calc_dir(typ, 'constants')
-    scopeTable.scopes['constants'][1].push(var, typ, dir)
+    dir = calc_dir(typ, 'constants',1)
+    scopeTable.scopes['constants'][1].push(var, typ, dir, 1)
 
 # Function for setting actual scope
 def create_scope(scope, typ, quadCont, p):
@@ -1069,71 +1120,83 @@ def reset_locals():
   loc_tem_cha = 116000 
 
 # Set memory direction for variable
-def calc_dir(typ, scope):
+def calc_dir(typ, scope, size):
   dir = 0
   if scope == 'global':
     if typ == 'int':
       global glo_int
       dir = glo_int
-      glo_int += 1
+      glo_int += size
     elif typ == 'flo':
       global glo_flo
       dir = glo_flo
-      glo_flo += 1
+      glo_flo += size
     elif typ == 'str':
       global glo_str
       dir = glo_str
-      glo_str += 1
+      glo_str += size
     elif typ == 'cha':
       global glo_cha
       dir = glo_cha
-      glo_cha += 1
+      glo_cha += size
     elif typ == 'boo':
       global glo_boo
       dir = glo_boo
-      glo_boo += 1
+      glo_boo += size
+    elif typ == 'lis':
+      global glo_lis
+      for i in range(glo_lis, glo_lis + size):
+        scopeTable.scopes['global'][1].push(i, None, None, 1)
+      dir = glo_lis
+      glo_lis += size
   elif scope == 'constants':
     if typ == 'int':
       global con_int
       dir = con_int
-      con_int += 1
+      con_int += size
     elif typ == 'flo':
       global con_flo
       dir = con_flo
-      con_flo += 1
+      con_flo += size
     elif typ == 'str':
       global con_str
       dir = con_str
-      con_str += 1
+      con_str += size
     elif typ == 'cha':
       global con_cha
       dir = con_cha
-      con_cha += 1
+      con_cha += size
     elif typ == 'boo':
       global con_boo
       dir = con_boo
-      con_boo += 1
+      con_boo += size
   else:
     if typ == 'int':
       global loc_int
       dir = loc_int
-      loc_int += 1
+      loc_int += size
     elif typ == 'flo':
       global loc_flo
       dir = loc_flo
-      loc_flo += 1
+      loc_flo += size
     elif typ == 'str':
       global loc_str
       dir = loc_str
-      loc_str += 1
+      loc_str += size
     elif typ == 'cha':
       global loc_cha
       dir = loc_cha
-      loc_cha += 1
+      loc_cha += size
     elif typ == 'boo':
       global loc_boo
       dir = loc_boo
-      loc_boo += 1
+      loc_boo += size
+    elif typ == 'lis':
+      global loc_lis
+      for i in range(loc_lis, loc_lis + size):
+        scopeTable.scopes[scope][1].push(i, None, None, 1)
+      dir = loc_lis
+      loc_lis += size
   return dir
 
 # Checks if value exists in any of the Tables (actualscope, global or constant)
@@ -1141,13 +1204,17 @@ def check_if_exist(var):
   global scopeTable
   global actualScope
   global actual_value
+  global actual_variable_type
   if var in scopeTable.scopes[actualScope][1].vars:
+    actual_variable_type = scopeTable.scopes[actualScope][1].vars[var][0]
     actual_value = scopeTable.scopes[actualScope][1].vars[var][1]
     return True
   elif var in scopeTable.scopes['constants'][1].vars:
+    actual_variable_type = scopeTable.scopes['constants'][1].vars[var][0]
     actual_value = scopeTable.scopes['constants'][1].vars[var][1]
     return True
   elif var in scopeTable.scopes['global'][1].vars:
+    actual_variable_type = scopeTable.scopes['global'][1].vars[var][0]
     actual_value = scopeTable.scopes['global'][1].vars[var][1]
     return True
   else:
@@ -1156,6 +1223,8 @@ def check_if_exist(var):
 # Check if operation is valid between operands
 def valid_operation(oper, op1, op2):
   global cube
+  op1 = real_direction(op1)
+  op2 = real_direction(op2)
   var1 = get_type_by_direction(op1)
   var2 = get_type_by_direction(op2)
   result = cube.cube[var1][oper][var2]
@@ -1163,6 +1232,16 @@ def valid_operation(oper, op1, op2):
     return -1
   else:
     return calc_new_direction(result, oper)
+
+def real_direction(direction):
+  global scopeTable
+  global actualScope
+  if (120000 <= direction and direction <= 121999): 
+    return scopeTable.scopes[actualScope][1].vars[direction][1]
+  elif (220000 <= direction and direction <= 221999):
+    return scopeTable.scopes['global'][1].vars[direction][1]
+  else:
+    return direction
 
 # Get the new direction
 def calc_new_direction(type, operator):

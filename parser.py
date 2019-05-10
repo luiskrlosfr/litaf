@@ -542,7 +542,7 @@ def p_list(p):
 # List Declaration
 def p_declaration_list(p):
   '''
-  declaration_list : LIS ID declaration_list_A1
+  declaration_list : LIS puntListID declaration_list_A1
   '''
   p[0] = ""
   for x in range(1, len(p)):
@@ -550,22 +550,14 @@ def p_declaration_list(p):
   p[0]
 def p_declaration_list_A1(p):
   '''
-  declaration_list_A1 : COMMA ID declaration_list_A1
+  declaration_list_A1 : COMMA puntListID declaration_list_A1
                       | empty
   '''
   p[0] = ""
   for x in range(1, len(p)):
     p[0] += str(p[x])
   p[0]
-# List Value (Single)
-def p_list_val(p):
-  '''
-  list_val : OPEN_BRACKET INT_CONST CLOSE_BRACKET
-  '''
-  p[0] = ""
-  for x in range(1, len(p)):
-    p[0] += str(p[x])
-  p[0]
+
 # List Methods
 def p_list_methods(p):
   '''
@@ -714,4 +706,9 @@ if name.endswith('.lit'):
     result = parser.parse(line)
 else:
   print('Cannot read non .lit files')
+
+counter = 0
+for quad in quadruples:
+  quad.print(counter)
+  counter += 1
 

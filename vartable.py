@@ -3,8 +3,8 @@ class VarTable:
   def __init__(self):
     self.vars = {}
 
-  def push(self, varName, varType, varDir):
-    self.vars[varName] = [varType, varDir]
+  def push(self, varName, varType, varDir, varSize):
+    self.vars[varName] = [varType, varDir, varSize]
   
 # Structure for Scopes Table
 class ScopeTable:
