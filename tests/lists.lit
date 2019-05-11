@@ -1,6 +1,6 @@
 litaf start : 
     
-    lis list[10], list2[5]
+    lis list[5], list2[5], test[5]
     
     fun SEARCH() is void 
         boo found
@@ -48,15 +48,44 @@ litaf start :
         out("]", "n/")
     end
 
+    fun BRUTE_FORCE_SORT() is void
+        flo temp
+        int i, j
+        i = 0
+        j = 0
+        temp = 0
+        loop from i upto 4
+            j = i + 1
+            loop from j upto 4
+                if(test[j] < test[i])
+                    temp = test[i]
+                    test[i] = test[j]
+                    test[j] = temp
+                end
+            by +1 end
+        by +1 end
+        out("[")
+        i = 0
+        loop from i upto 4
+            out(test[i], " ")
+        by +1 end
+        out("]", "n/")
+    end
+
     main is int 
         int x, num
-        x = 0
-        % loop from x upto 9
+        test[0] = 18.3
+        test[1] = 20
+        test[2] = 0.2
+        test[3] = 55
+        test[4] = 55.2
+        % loop from x upto 4
             out("Ingresa el valor de N en la casilla ", x, "n/")
             in(num)
             list[x] = num
         by +1 end %
-        VECTOR()
-        SEARCH()
+        BRUTE_FORCE_SORT()
+        % VECTOR()
+        SEARCH() %
     with 0 end 
 end
