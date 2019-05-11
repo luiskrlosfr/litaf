@@ -25,8 +25,6 @@ def execute_quadruple(quad, ip):
   elif instruction == 'GoToF':
     return evaluate_goto_false(pointer, quad)
   elif instruction == 'ERA':
-    # memoryStack.append(vm_memory.locals)
-    # create_local_memory()
     global params
     params = []
   elif instruction == 'PARAM':
@@ -43,18 +41,25 @@ def execute_quadruple(quad, ip):
     pointer = pointerStack.pop()
   elif instruction == 'SetReturnValue':
     assign_return_value(quad.result)
+  elif instruction == 'VER':
+    verify_list_range(quad.op1, quad.result)
+  elif instruction == 'SUM_DIR':
+    add_direction(quad)
   elif instruction == '+' or instruction == '-' or instruction == '*' or instruction == '/':
+    check_list_data_type(instruction, quad.op1, quad.op2)
     execute_aritmetic_operation(instruction, quad.op1, quad.op2, quad.result)
   elif instruction == '==' or instruction == '!=' or instruction == '>=' or instruction == '>' or instruction == '<=' or instruction == '<':
+    check_list_data_type(instruction, quad.op1, quad.op2)
     execute_comparison_operation(instruction, quad.op1, quad.op2, quad.result)
   elif instruction == '&&' or instruction == '||':
+    check_list_data_type(instruction, quad.op1, quad.op2)
     execute_logic_operation(instruction, quad.op1, quad.op2, quad.result)
   elif instruction == 'Writing':
     output_msg(quad.result)
   elif instruction == 'Lecture':
     input_variable(quad.result)
   elif instruction == '=':
-    execute_assign(vm_memory.real_memory(quad.op1).get_value(quad.op1), quad.result)
+    execute_assign(quad.op1, quad.result)
   pointer += 1
   return pointer
 
@@ -63,8 +68,8 @@ def execute_aritmetic_operation(op, left, right, res_direction):
   global vm_memory
   global returnStack
   global pointerStack
-  l = vm_memory.real_memory(left).get_value(left)
-  r = vm_memory.real_memory(right).get_value(right)
+  l = get_value(left, left)
+  r = get_value(right, right)
   if op == '/' and r == 0 or r == '0':
     print('Error: cannot divide by 0')
     sys.exit(0)
@@ -79,12 +84,16 @@ def execute_aritmetic_operation(op, left, right, res_direction):
 def execute_assign(left, res_direction):
   global vm_memory
   variable_in_memory(res_direction)
-  vm_memory.real_memory(res_direction).set_value(res_direction, left)
+  var = get_value(left, left)
+  check_list_data_type('=', left, res_direction)
+  if(res_direction in range(140000, 141999) or res_direction in range(240000, 241999)):
+    res_direction = get_value_assign(res_direction, res_direction)
+  vm_memory.real_memory(res_direction).set_value(res_direction, var)
 
 # Executes logical operations according to operator
 def execute_comparison_operation(op, left, right, res_direction):
   global vm_memory
-  result = compare_operations[op](vm_memory.real_memory(left).get_value(left), vm_memory.real_memory(right).get_value(right))
+  result = compare_operations[op](get_value(left, left), get_value(right, right))
   if not check_existence(res_direction):
     variable_in_memory(res_direction)
   vm_memory.real_memory(res_direction).set_value(res_direction, result)
@@ -92,7 +101,7 @@ def execute_comparison_operation(op, left, right, res_direction):
 # Execute logical operations according to operator
 def execute_logic_operation(op, left, right, res_direction):
   global vm_memory
-  result = logic_operations[op](vm_memory.real_memory(left).get_value(left), vm_memory.real_memory(right).get_value(right))
+  result = logic_operations[op](get_value(left, left), get_value(right, right))
   if not check_existence(res_direction):
     variable_in_memory(res_direction)
   vm_memory.real_memory(res_direction).set_value(res_direction, result)
@@ -100,7 +109,7 @@ def execute_logic_operation(op, left, right, res_direction):
 # Evaluates if two values are equal
 def evaluate_goto_false(pointer, quadruple):
   global vm_memory
-  if evaluate_logic_operation('==', vm_memory.real_memory(quadruple.op1).get_value(quadruple.op1), False):
+  if evaluate_logic_operation('==', get_value(quadruple.op1, quadruple.op1), False):
     return quadruple.result
   else:
     return pointer + 1
@@ -117,7 +126,7 @@ def create_local_memory():
 # Print function for Writing quad instruction
 def output_msg(direction):
   global vm_memory
-  value = vm_memory.real_memory(direction).get_value(direction)
+  value = get_value(direction, direction)
   if value == "n/":
     print('')
   else:
@@ -156,7 +165,7 @@ def return_value(quad):
   global memoryStack
   global returnStack
   if quad.result != None:
-    return_val = vm_memory.real_memory(quad.result).get_value(quad.result)
+    return_val = get_value(quad.result, quad.result)
     returnStack.append(return_val)
   vm_memory.set_local(memoryStack.pop())
 
@@ -177,7 +186,7 @@ def insert_params(quad):
   global vm_memory
   direction = quad.op1
   params.append(direction)
-  params.append(vm_memory.real_memory(direction).get_value(direction))
+  params.append(get_value(direction, direction))
 
 # Creates local variables from function parameters
 def fill_params():
@@ -190,6 +199,68 @@ def fill_params():
     no_temporal = vm_memory.real_memory(direction).base_dir_by_type(direction)
     local_dir = vm_memory.real_memory(no_temporal).get_dir_as_local(no_temporal)
     vm_memory.real_memory(local_dir).push(value)
+
+# Add an offset to Base Direction of List
+def add_direction(quad):
+  global vm_memory
+  result = quad.op1 + get_value(quad.op2, quad.op2)
+  if not check_existence(result):
+      variable_in_memory(result)
+  if  (140000 <= quad.result and quad.result <= 141999) or (240000 <= quad.result and quad.result <= 241999):
+    if not check_existence(quad.result):
+      variable_in_memory(quad.result)
+  vm_memory.real_memory(quad.result).set_value(quad.result, result)
+
+def get_value(memory_dir, direction):
+  global vm_memory
+  dir = vm_memory.real_memory(memory_dir).get_value(direction)
+  if((140000 <= direction and direction <= 141999) or (240000 <= direction and direction <= 241999)) and (dir in range(120000, 121999) or dir in range(140000, 141999) or dir in range(220000, 221999) or dir in range(240000, 241999)):
+    dir = vm_memory.real_memory(dir).get_value(dir)
+  return dir
+
+def get_value_assign(memory_dir, direction):
+  global vm_memory
+  dir = vm_memory.real_memory(memory_dir).get_value(direction)
+  return dir
+
+# Check if value stored in list is compatible with other value to execute Quadruple
+def check_list_data_type(operator, operand1, operand2):
+  global vm_memory
+  type1 = get_type(operand1)
+  type2 = get_type(operand2)
+  if(operator != '==' and operator != '!=') and (type1 != type2 and (operator != '=' and ((operand2 not in (140000, 141999)) or (operand2 not in (240000, 241999))))):
+    if(type1 == 'flo' and type2 != 'int') or (type1 == 'int' and operator == '=') or (type1 == 'int' and type2 != 'flo') or (type1 == 'str' and type2 != 'cha'):
+      print("Error: type mismatch between value stored in list and other operand")
+      sys.exit(0)
+
+# Check if index is inside limit for list
+def verify_list_range(index, limit):
+  index = get_value(index, index)
+  limit = get_value(limit, limit)
+  if (limit <= index) or (index < 0):
+    print("Error: index out of range")
+    sys.exit(0)
+
+# Get type of data
+def get_type(direction):
+  global vm_memory
+  value = vm_memory.real_memory(direction).get_value(direction)
+  if(120000 <= direction and direction <= 121999) or (220000 <= direction and direction <= 221999):
+    if(type(value) == type(1)):
+      value = 'int'
+    elif(type(value) == type(1.1)):
+      value = 'flo'
+    elif(type(value) == type("s")):
+      if(len(value) == 1):
+        value = 'cha'
+      else:
+        value = 'str'
+  elif(140000 <= direction and direction <= 141999) or (240000 <= direction and direction <= 241999):
+    value = get_type(vm_memory.real_memory(direction).get_value(direction))
+  else:
+    return vm_memory.real_memory(direction).typ
+  return value
+
 
 # Fill Constant Memory with Constant Memory from Parser
 pointer = 0

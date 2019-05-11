@@ -166,6 +166,7 @@ def p_statement(p):
 def p_block(p):
   '''
   block : assign
+        | assign_list
         | cycle
         | condition
         | lecture
@@ -698,7 +699,10 @@ parser = yacc.yacc()
 
 # Read file as an input and evaluate if the grammar is acceptable or not. Print a message if it finds an error
 # in the grammar.
+
 name = sys.argv[1]
+
+# name = 'tests/lists.lit'
 
 if name.endswith('.lit'):
   with open(name, 'r') as myfile:
@@ -707,8 +711,8 @@ if name.endswith('.lit'):
 else:
   print('Cannot read non .lit files')
 
-counter = 0
-for quad in quadruples:
-  quad.print(counter)
-  counter += 1
+# counter = 0
+# for quad in quadruples:
+#   quad.print(counter)
+#   counter += 1
 

@@ -1,0 +1,62 @@
+litaf start : 
+    
+    lis list[10], list2[5]
+    
+    fun SEARCH() is void 
+        boo found
+        int x, index, num
+        str word
+        found = false
+        x = 0
+        index = 0
+        out("Ingresa la palabra a buscar")
+        in(word)
+        loop from x upto 4
+            if(list2[x] == word)
+                found = true
+                index = x
+            end
+        by +1 end
+        if (found == true)
+            out("Word '", word, "' found at index ", index, "!", "n/")
+        else
+            out("Word '", word, "' not found", "n/")
+        end
+    end
+
+    fun VECTOR() is void
+        int x, i
+        flo y
+        str z
+        cha a
+        boo b 
+        in(x)
+        in(y)
+        in(z)
+        in(a)
+        in(b)
+        list2[0] = x
+        list2[1] = y
+        list2[2] = z
+        list2[3] = a
+        list2[4] = b
+        i = 0
+        out("[")
+        loop from i upto 4
+            out(list2[i], " ")
+        by +1 end
+        out("]", "n/")
+    end
+
+    main is int 
+        int x, num
+        x = 0
+        % loop from x upto 9
+            out("Ingresa el valor de N en la casilla ", x, "n/")
+            in(num)
+            list[x] = num
+        by +1 end %
+        VECTOR()
+        SEARCH()
+    with 0 end 
+end

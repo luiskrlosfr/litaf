@@ -41,6 +41,7 @@ loc_tem_flo = 112000
 loc_tem_str = 114000
 loc_tem_cha = 116000
 loc_tem_boo = 118000
+loc_tem_lis = 140000 
 glo_int = 200000
 glo_flo = 202000
 glo_str = 204000
@@ -52,6 +53,7 @@ glo_tem_flo = 212000
 glo_tem_str = 214000
 glo_tem_cha = 216000
 glo_tem_boo = 218000
+glo_tem_lis = 240000
 con_int = 300000
 con_flo = 302000
 con_str = 304000
@@ -124,6 +126,31 @@ def p_assign(p):
   operand2 = pop_from_variables(p)
   if check_if_exist(p[1]):
     operand1 = actual_value
+    result = valid_operation(operator, operand1, operand2)
+    if result == -1:
+      print("Invalid operation at {}".format(p.lexer.lineno))
+      sys.exit(0)
+    else:
+      quadruples.append(Quad(operator, None, operand2, operand1))
+      quadCont += 1
+  p[0] = ""
+  for x in range(1, len(p)):
+    p[0] += str(p[x])
+  p[0]
+
+def p_assign_list(p):
+  '''
+  assign_list : ID list_val EQUAL appendEqual assign_A
+  '''
+  global operators
+  global quadruples
+  global variables
+  global quadCont
+  global actual_value
+  operator = pop_from_operators(p)
+  operand2 = pop_from_variables(p)
+  if check_if_exist(p[1]):
+    operand1 = pop_from_variables(p)
     result = valid_operation(operator, operand1, operand2)
     if result == -1:
       print("Invalid operation at {}".format(p.lexer.lineno))
@@ -334,7 +361,7 @@ def p_factor(p):
     if actual_variable_type != 'lis':
       variables.append(actual_value)
     if len(operators) > 0:
-      if operators[-1] == '-' and negativeflag ==1:
+      if operators[-1] == '-' and negativeflag == 1:
         oper = pop_from_operators(p)
         var1 = pop_from_variables(p)
         result = valid_operation(oper, var1, var1)
@@ -342,7 +369,7 @@ def p_factor(p):
           print("Invalid operation at {}".format(p.lexer.lineno))
           sys.exit(0)
         else:
-          quadruples.append(Quad(oper,var1,0,result))
+          quadruples.append(Quad(oper, var1, 0, result))
           variables.append(result)
           quadCont += 1
           flag = 0
@@ -1005,7 +1032,7 @@ def p_puntListID(p):
 # Get one value of the list
 def p_list_val(p):
   '''
-  list_val : OPEN_BRACKET hyper_exp CLOSE_BRACKET
+  list_val : punt_false_bottom_function OPEN_BRACKET hyper_exp CLOSE_BRACKET pop_false_bottom_function
   '''
   global quadruples
   global quadCont
@@ -1025,8 +1052,10 @@ def p_list_val(p):
     quadruples.append(Quad('VER', None, index, dirSize))
     quadCont += 1
     baseDir = scopeTable.scopes[scope][1].vars[p[-1]][1]
-    dir = baseDir + index
-    actual_value = dir
+    dir = valid_operation('+', baseDir, index)
+    quadruples.append(Quad('SUM_DIR', index, baseDir, dir))
+    quadCont += 1
+    variables.append(dir)
   else:
     print("Error at line {}: variable '{}' not declared".format(p.lexer.lineno, p[-1]))
     sys.exit(0)
@@ -1223,25 +1252,23 @@ def check_if_exist(var):
 # Check if operation is valid between operands
 def valid_operation(oper, op1, op2):
   global cube
-  op1 = real_direction(op1)
-  op2 = real_direction(op2)
-  var1 = get_type_by_direction(op1)
-  var2 = get_type_by_direction(op2)
-  result = cube.cube[var1][oper][var2]
-  if result[0] == 'e' or result[0] == 'o':
-    return -1
+  if dir_not_lis(op1) and dir_not_lis(op2):
+    var1 = get_type_by_direction(op1)
+    var2 = get_type_by_direction(op2)
+    result = cube.cube[var1][oper][var2]
+    if result[0] == 'e' or result[0] == 'o':
+      return -1
+    else:
+      return calc_new_direction(result, oper)
   else:
-    return calc_new_direction(result, oper)
+    return calc_new_direction('lis', oper)
 
-def real_direction(direction):
-  global scopeTable
-  global actualScope
-  if (120000 <= direction and direction <= 121999): 
-    return scopeTable.scopes[actualScope][1].vars[direction][1]
-  elif (220000 <= direction and direction <= 221999):
-    return scopeTable.scopes['global'][1].vars[direction][1]
+# Verify if direction is from a list
+def dir_not_lis(direction):
+  if(120000 <= direction and direction <= 121999) or (140000 <= direction and direction <= 141999) or (220000 <= direction and direction <= 221999) or (240000 <= direction and direction <= 241999):
+    return False
   else:
-    return direction
+    return True
 
 # Get the new direction
 def calc_new_direction(type, operator):
@@ -1273,6 +1300,11 @@ def calc_new_direction(type, operator):
       dir = loc_tem_boo
       if operator != '=':
         loc_tem_boo += 1
+    elif type == 'lis':
+      global loc_tem_lis
+      dir = loc_tem_lis
+      if operator != '=':
+        loc_tem_lis += 1
   else:
     if type == 'int':
       global glo_tem_int
@@ -1299,6 +1331,11 @@ def calc_new_direction(type, operator):
       dir = glo_tem_boo
       if operator != '=':
         glo_tem_boo += 1
+    elif type == 'lis':
+      global glo_tem_lis
+      dir = glo_tem_lis
+      if operator != '=':
+        glo_tem_lis += 1
   return dir
   
 # Get the type of data using its direction

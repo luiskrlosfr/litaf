@@ -2,6 +2,7 @@ FLO_CONS = 2000
 STR_CONS = 4000
 CHA_CONS = 6000
 BOO_CONS = 8000
+LIS_CONS = 20000
 
 # Atomic class for Virtual Machine Memory.
 class VirtualMemory:
@@ -45,6 +46,10 @@ class Memories:
     self.str = VirtualMemory(self.base_dir + STR_CONS, 'str')
     self.cha = VirtualMemory(self.base_dir + CHA_CONS, 'cha')
     self.boo = VirtualMemory(self.base_dir + BOO_CONS, 'boo')
+    if(base_dir == 110000 or base_dir == 210000):
+      self.lis = VirtualMemory(self.base_dir + LIS_CONS + 10000, 'lis')
+    else:
+      self.lis = VirtualMemory(self.base_dir + LIS_CONS, 'lis')
 
   def get_type_by_direction(self, direction):
     if(self.base_dir <= direction and direction < self.base_dir + 2000):
@@ -57,6 +62,8 @@ class Memories:
       return self.cha
     elif(self.base_dir + BOO_CONS <= direction and direction < self.base_dir + 10000):
       return self.boo
+    elif(self.base_dir + LIS_CONS <= direction and direction < self.base_dir + 40000):
+      return self.lis
 
 # Class that groups Memories according to Scope | Type relation (i.e. 200000 would set Memory for Global Variables and 110000 for Local Temporals)
 class Memory:
@@ -75,16 +82,12 @@ class Memory:
       return self.variables.get_type_by_direction(direction)
     elif(self.base_temporals <= direction and direction < self.base_temporals + 10000):
       return self.temporals.get_type_by_direction(direction)
+    elif(self.base_variables + 20000 <= direction) and (self.base_temporals == None or direction < self.base_variables + 22000):
+      return self.variables.get_type_by_direction(direction)
+    elif(self.base_temporals + 30000 <= direction) and (direction < self.base_temporals + 32000):
+      return self.temporals.get_type_by_direction(direction)
     else:
       return None
-
-  # def get_direct_memory_by_direction(self, direction):
-  #   if(self.base_variables <= direction and (self.base_temporals == None or direction < self.base_temporals)):
-  #     return self.variables.get_type_by_direction(direction)
-  #   elif(self.base_temporals <= direction and direction < self.base_temporals + 10000):
-  #     return self.temporals.get_type_by_direction(direction)
-  #   else:
-  #     return None
 
 class BigMemory:
   def __init__(self):
