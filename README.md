@@ -3,7 +3,7 @@ Compiler and programming language "litaf"
 Last compiled date: May 08, 2019
 # The language
 ## Structure
-Litad follows a minimum structure, so be sure to follow it before compiling it!
+Litaf follows a minimum structure, so be sure to follow it before compiling it!
 ```
 litaf start:
   main is int
@@ -13,7 +13,7 @@ end
 ```
 This is the minimum structure, anything you want to run with ths structure can be placed inside `main`
 ## Variable Declaration
-Litaf nahdles 5 types for data types: `int`, `flo`, `cha`, `str`, and `boo`. For declaring a variable you just simply type the type you want your variable to be and then a name for the variable. Multiple variable declarations is supported.
+Litaf handles 5 types for data types: `int`, `flo`, `cha`, `str`, and `boo`. For declaring a variable you just simply type the type you want your variable to be and then a name for the variable. Multiple variable declarations is supported.
 ```
 int varInt
 str stringOne, stringTwo, stringThree
@@ -108,6 +108,21 @@ else
   out("Nah")
 end
 ```
+## Lists
+Litaf has a sixth type of data call `lis`, which is its basic data structure, a hybrid mix between conventional arrays and lists (`lis` size must be defined and cannot be changed but the data that stores can be any of the other five types).
+```
+litaf start:
+  main is int
+    lis myList[5]
+    myList[0] = 100
+    myList[1] = 26.7221
+    myList[2] = 'L'
+    myList[3] = "itaf"
+    myList[4] = false
+  end
+end
+```
+As you can see, you can store multiple data types values in one single `lis` instance. Note that functions don't support `lis` type as parameters, yet; however, you can declare a global `lis` variable and use it anywhere.
 ## Classes
 Litaf is working on implementing classes. They should be placed before global variables and follow this structure```
 ```
